@@ -4,18 +4,18 @@ class RoutingTable(object):
     def __init__(self):
         self.rt = {}
 
-    def AddRTEntry(self, rt_entry):
-        if rt_entry.get_name() not in rt.keys():
-            self.rt[rt_entry.get_name()] = rt_entry
+    def addRTEntry(self, rt_entry):
+        if rt_entry.getName() not in rt.keys():
+            self.rt[rt_entry.getName()] = rt_entry
         else:
             print "ERROR: entry already in routing table, this should never happen"
 
-    def RemRTEntry(self, name):
-        rt_entry = self.find_rt_entry(name)
+    def remRTEntry(self, name):
+        rt_entry = self.findRTEntry(name)
         if rt_entry != None:
             del self.rt[name]
 
-    def FindRTEntry(self, name):
+    def findRTEntry(self, name):
         if name in rt.keys():
             return rt[name]
         else:
@@ -27,11 +27,11 @@ class RTEntry(object):
         self.ringpos = ringpos
         self.timestamp = timestamp
         
-    def GetName(self):
+    def getName(self):
         return self.name
 
-    def GetRingPos(self):
+    def getRingPos(self):
         return self.ringpos
 
-    def GetTimestamp(self):
+    def getTimestamp(self):
         return self.timestamp

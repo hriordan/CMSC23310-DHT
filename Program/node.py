@@ -7,7 +7,7 @@ class Node(object):
         self.name = name
         self.peers = peers
         self.pos = pos
-        self.rt = rt.RoutingTable()
+        self.rt = rt.RoutingTable
 
     def getName(self):
         self.name
