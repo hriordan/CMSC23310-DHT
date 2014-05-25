@@ -12,9 +12,11 @@ parser.add_argument("-rep", "--router-endpoint", dest = "rep",
 parser.add_argument("-pf", "--peers", dest = "peers",
                     help = "A .csv containing the peer list")
 args = parser.parse_args()
+bundle = {}
 if args.name != None:
     print args.name
 if args.pep != None:
     print args.pep
 if args.rep != None:
     print args.rep
+if args.peers != None:
