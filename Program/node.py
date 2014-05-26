@@ -10,13 +10,13 @@ class Node(object):
         self.rt = rt.RoutingTable
 
     def getName(self):
-        self.name
+        return self.name
 
     def getPeers(self):
-        self.peers
+        return self.peers
 
     def getPos(self):
-        self.pos
+        return self.pos
 
     def getRT(self):
-        self.rt
+        return self.rt
