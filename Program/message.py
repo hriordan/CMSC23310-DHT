@@ -2,9 +2,13 @@ import json
 
 class Message(object):
     def __init__(self, msgType, dest, source):
-        self.msgType
-        self.destination
-        self.source
+        self.msgType = msgType
+        self.destination = dest
+        self.source = source 
+
+    def __repr__(self):
+        return '<Message(%s)>' % self.msgType
+        
 
 class MessageGetReq(Message):
     def __init__(self, dest, source, mID, key):
