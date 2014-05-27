@@ -21,6 +21,20 @@ class RoutingTable(object):
         else:
             return None
 
+    def findSucc(self, key):
+        hashMax = 2**160 -1
+        dist = None
+        for e in self.rt:
+            if e.getRingPos() < key:
+                d = (hashMax - key) + e.getRingPos()
+            else:
+                d = e.getRingPos() - key
+            d = 
+            if dist == None or d < dist:
+                dist = d
+                ret = e
+        return ret
+
 class RTEntry(object):
     def __init__(self, name, ringpos, timestamp):
         self.name = name

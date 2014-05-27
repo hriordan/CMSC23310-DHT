@@ -1,20 +1,57 @@
 import json
 
 class Message(object):
-    def __init__(self):
-        self.type
-        self.dest
-        self.src
+    def __init__(self, msgType, dest, source):
+        self.msgType
+        self.destination
+        self.source
 
-class MessageGet(Message):
-    pass
+class MessageGetReq(Message):
+    def __init__(self, dest, source, mID, key):
+        Message.__init__(self, "get", dest, source)
+        self.mID = mID
+        self.key = key
 
-class MessageSet(Message):
+class MessageGetRes(Message):
+    def __init__(self, dest, source, mID, value):
+        Message.__init__(self, "getResponse", dest, source)
+        self.mID = mID
+        self.value = value
 
-class MessageGetResponse(Message):
+class MessageGetErr(Message):
+    def __init__(self, dest, source, mID, error):
+        Message.__init__(self, "getResponse", dest, source)
+        self.mID = mID
+        self.error = error
 
-class MessageSetResponse(Message):
+class MessageSetReq(Message):
+    def __init__(self, dest, source, mID, key, value):
+        Message.__init__(self, "set", dest, source)
+        self.mID = mID
+        self.key = key
+        self.value = value
+
+class MessageSetRes(Message):
+    def __init__(self, dest, source, mID, value):
+        Message.__init__(self, "setResponse", dest, source)
+        self.mID = mID
+        self.value = value
+
+class MessageSetErr(Message):
+    def __init__(self, dest, source, mID, error):
+        Message.__init__(self, "setResponse", dest, source)
+        self.mID = mID
+        self.error = error
 
 class MessageHello(Message):
+    def __init__(self, dest, source):
+        Message.__init__(self, "hello", dest, source)
+
+class MessageHelloRes(Message):
+    def __init__(self, dest, source):
+        Message.__init__(self, "helloResponse", dest, source)
 
 class MessageLog(Message):
+    def __init__(self, dest, source, logMsg):
+        Message.__init__(self, "log", dest, source)
+        self.logMsg = logMsg

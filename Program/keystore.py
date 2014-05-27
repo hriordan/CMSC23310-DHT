@@ -24,7 +24,7 @@ class KeyVal(object):
         self.key = key
         self.value = value
         self.timestamp = timestamp
-        self.hashKey = hashlib.sha1(key).digest()
+        self.hashKey = int(hashlib.sha1(key).hexdigest(), 16)
 
     def GetHashKey(self):
         return self.hashKey
