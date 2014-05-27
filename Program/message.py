@@ -55,3 +55,20 @@ class MessageLog(Message):
     def __init__(self, dest, source, logMsg):
         Message.__init__(self, "log", dest, source)
         self.logMsg = logMsg
+
+class MessageRep(Message):
+    def __init__(self, dest, source, key, value):
+        Message.__init__(self, "replicate", dest, source)
+        self.key = key
+        self.value = value
+
+class MessageMerge(Message):
+    def __init__(self, dest, source, key, value):
+        Messsage.__init__(self, "merge", dest, source)
+        self.key
+        self.value
+
+class MessageHeartbeat(Message):
+    def __init__(self, dest, source, msgRcv):
+        Message.__init__(self, "Heartbeat", dest, source)
+        self.msgRcv = msgRcv
