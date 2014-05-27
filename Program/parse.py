@@ -31,7 +31,7 @@ class NodeArgs(object):
                             help = "public endpoint")
         parser.add_argument("-rep", "--router-endpoint", dest = "rep",
                             help = "router endpoint")
-        parser.add_argument("-pf", "--peers", dest = "peers",
+        parser.add_argument("-p", "--peers", dest = "peers",
                             help = "The comma-separated peer list.")
 
         args = parser.parse_args()
