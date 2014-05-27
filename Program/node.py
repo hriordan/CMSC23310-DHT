@@ -11,10 +11,15 @@ ioloop.install()
 
 class Node(object):
 
-    def __init__(self, name, pep, rep, peers, pos):
+    def __init__(self, name, pep, rep, spammer, peers):
         self.loop = ioloop.ZMQIOLoop.current()
         self.context = zmq.Context()
-
+        o = open(name +".ot", "w")
+        e = open(name +".et", "w")
+        sys.stdout = o
+        sys.stderr = e
+        print random.randint(0, 15)
+        print random.randint(0, 15)
         # SUB socket for receiving messages from the broker
         self.sub_sock = self.context.socket(zmq.SUB)
         self.sub_sock.connect(pep)
@@ -31,8 +36,16 @@ class Node(object):
 
         self.name = name
         self.peers = peers
-        self.pos = pos
+        self.spammer = spammer
         self.rt = rt.RoutingTable
+
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
+                    signal.SIGQUIT]:
+            signal.signal(sig, self.shutdown)
+        print self.name, self.peers
+
+    def start(self):
+        print self.name, self.peers
 
     def handle(self, msg_frames):
         print "Handling!"
@@ -40,14 +53,40 @@ class Node(object):
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
 
+    def shutdown(self, sig, frame):
+        print "shutting down"
+        sys.exit(0)
+
     def getName(self):
         return self.name
 
     def getPeers(self):
         return self.peers
 
-    def getPos(self):
-        return self.pos
 
     def getRT(self):
         return self.rt
+
+
+
+
+if __name__ == '__main__':
+    import argparse
+    print "out"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pub-endpoint', dest = 'pub_ep',
+                        default = 'tcp://127.0.0.1:23310')
+    parser.add_argument('--router-endpoint', dest = 'router_ep',
+                        default = 'tcp://127.0.0.1:23311')
+    parser.add_argument('--node-name', dest = 'node_name',
+                        default = 'test_node')
+    parser.add_argument('--spammer', dest ='spammer', action = 'store_true')
+    parser.set_defaults(spammer = False)
+    parser.add_argument('--peer-names', dest = 'peer_names', default = '')
+    args = parser.parse_args()
+    args.peer_names = args.peer_names.split(',')
+
+    Node(args.node_name, args.pub_ep, args.router_ep, args.spammer,
+         args.peer_names).start()
+
+
