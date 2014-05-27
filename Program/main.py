@@ -5,7 +5,10 @@
 
 import parse
 import node
-
+print "e"
 args = parse.NodeArgs()
-
+print "huh"
 n = node.Node(args.name, args.peers, 0)
+print n.getName()
+print n.getPeers()
+print n.getPos()
