@@ -39,7 +39,7 @@ class Node(object):
         self.name = name
         self.peers = peers
         self.spammer = spammer
-        self.rt = rt.RoutingTable
+        self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
@@ -57,6 +57,61 @@ class Node(object):
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
+
+    # Message Handler, expects a message object, conversion will be done before this function
+    # is called
+    def MsgHandle(self, msg):
+        mType = msg.getType()
+        if mType == "hello":
+            """
+            Send a hello response back to the broker
+            """
+            pass
+
+        elif mType == "get":
+            """
+            If it belongs to us, return a getResponse or getError.
+            Else, forward to correct node according to RT
+            """
+            pass
+
+        elif mType = "set":
+            """
+            If key belongs to us, set key, send replica messages to 2 successors of our node, then send setResponse
+            Else forward set msg to correct node according to RT
+            """
+            pass
+
+        elif mType = "replicate":
+            """
+            Update keystore based on values sent in
+            """
+            pass
+
+        elif mType = "merge":
+            """
+            We are taking over a section of some one elses keyspace, compare our keyvals with the 
+            ones sent to us, latest timestamp wins
+            Send full keystore replicate message to succsors
+            """
+            pass
+
+        elif mType = "heartbeat":
+            """
+            Used to update timeouts on RT, also contains message digests of all messages recieved since last
+            heartbeat was sent. These digests allow for other nodes to clear their queue of messages
+            that they are awaiting confirmation on.
+            Other option is seding some type of ACK for each message recved which might be worse....
+            """
+            pass
+
+        else:
+            """
+            Send log message to broker announcing that the message type is not one we expected.
+            """
+            pass
+
+
 
     def shutdown(self, sig, frame):
         print "shutting down"

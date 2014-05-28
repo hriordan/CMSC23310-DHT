@@ -9,6 +9,8 @@ class Message(object):
     def __repr__(self):
         return '<Message(%s, %s, %s)>' % (self.msgType, self.destination, self.source)
 
+    def getType(self):
+        return self.msgType
 
 class MessageGetReq(Message):
     def __init__(self, dest, source, mID, key):
@@ -18,14 +20,14 @@ class MessageGetReq(Message):
 
 
 class MessageGetRes(Message):
-    def __init__(self, dest, source, mID, value):
-        Message.__init__(self, "getResponse", dest, source)
+    def __init__(self, source, mID, value):
+        Message.__init__(self, "getResponse", "Broker", source)
         self.mID = mID
         self.value = value
 
 class MessageGetErr(Message):
-    def __init__(self, destination, source, mID, error):
-        Message.__init__(self, "getResponse", destination, source)
+    def __init__(self,  source, mID, error):
+        Message.__init__(self, "getResponse", "Broker", source)
         self.mID = mID
         self.error = error
     def __repr__(self):
@@ -39,14 +41,14 @@ class MessageSetReq(Message):
         self.value = value
 
 class MessageSetRes(Message):
-    def __init__(self, dest, source, mID, value):
-        Message.__init__(self, "setResponse", dest, source)
+    def __init__(self, source, mID, value):
+        Message.__init__(self, "setResponse", "Broker", source)
         self.mID = mID
         self.value = value
 
 class MessageSetErr(Message):
-    def __init__(self, dest, source, mID, error):
-        Message.__init__(self, "setResponse", dest, source)
+    def __init__(self, source, mID, error):
+        Message.__init__(self, "setResponse", "Broker", source)
         self.mID = mID
         self.error = error
 
@@ -55,27 +57,31 @@ class MessageHello(Message):
         Message.__init__(self, "hello", dest, source)
 
 class MessageHelloRes(Message):
-    def __init__(self, dest, source):
-        Message.__init__(self, "helloResponse", dest, source)
+    def __init__(self, source):
+        Message.__init__(self, "helloResponse", "Broker", source)
 
 class MessageLog(Message):
-    def __init__(self, dest, source, logMsg):
-        Message.__init__(self, "log", dest, source)
+    def __init__(self, source, logMsg):
+        Message.__init__(self, "log", "Broker", source)
         self.logMsg = logMsg
 
 class MessageRep(Message):
-    def __init__(self, dest, source, key, value):
+    def __init__(self, dest, source, keyvals):
         Message.__init__(self, "replicate", dest, source)
-        self.key = key
-        self.value = value
+        self.keyvals = keyvals 
+        # We can use a list of dictionaries to send many keyvals at a time since
+        # we need a key, value, timestamp for each entry
 
 class MessageMerge(Message):
-    def __init__(self, dest, source, key, value):
+    def __init__(self, dest, source, keyvals):
         Messsage.__init__(self, "merge", dest, source)
-        self.key
-        self.value
+        self.keyvals = keyvals 
+        # We can use a list of dictionaries to send many keyvals at a time since
+        # we need a key, value, timestamp for each entry
 
 class MessageHeartbeat(Message):
     def __init__(self, dest, source, msgRcv):
-        Message.__init__(self, "Heartbeat", dest, source)
+        Message.__init__(self, "heartbeat", dest, source)
         self.msgRcv = msgRcv
+        self.ringpos = ringpos # not 100% needed as each node can calculate others ringpos based on the sha1 has
+        # of the name
