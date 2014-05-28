@@ -53,6 +53,7 @@ class Node(object):
 
     def handle(self, msg_frames):
         print "Handling!"
+        assert 
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
