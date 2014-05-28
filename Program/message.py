@@ -1,20 +1,21 @@
 import json
 
 class Message(object):
-    def __init__(self, msgType, dest, source):
+    def __init__(self, msgType, destination, source):
         self.msgType = msgType
-        self.destination = dest
+        self.destination = destination
         self.source = source 
 
     def __repr__(self):
-        return '<Message(%s)>' % self.msgType
-        
+        return '<Message(%s, %s, %s)>' % (self.msgType, self.destination, self.source)
+
 
 class MessageGetReq(Message):
     def __init__(self, dest, source, mID, key):
         Message.__init__(self, "get", dest, source)
         self.mID = mID
         self.key = key
+
 
 class MessageGetRes(Message):
     def __init__(self, dest, source, mID, value):
@@ -23,10 +24,12 @@ class MessageGetRes(Message):
         self.value = value
 
 class MessageGetErr(Message):
-    def __init__(self, dest, source, mID, error):
-        Message.__init__(self, "getResponse", dest, source)
+    def __init__(self, destination, source, mID, error):
+        Message.__init__(self, "getResponse", destination, source)
         self.mID = mID
         self.error = error
+    def __repr__(self):
+        return "errror %s" % self.error
 
 class MessageSetReq(Message):
     def __init__(self, dest, source, mID, key, value):
