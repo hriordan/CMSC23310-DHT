@@ -8,6 +8,7 @@ import sys
 import signal
 import time
 import zmq
+import keystore
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
@@ -41,6 +42,7 @@ class Node(object):
         self.spammer = spammer
         self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
+        self.keystore = KeyStore()
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -53,7 +55,24 @@ class Node(object):
 
     def handle(self, msg_frames):
         print "Handling!"
-        assert 
+        assert len(msg_frames) == 3
+        assert msg_frames[0] == self.name
+        # Second field is the empty delimiter
+        msg = json.loads(msg_frames[2])
+
+        if msg['type'] == 'get':
+            # TODO: handle errors, esp. KeyError
+            k = msg['key']
+            v = self.keystore.GetKey(k)
+            if v == None:
+                """Ask succesor for value? """
+                pass
+            else:
+                self.req.send_json({'type': 'getResponse', 'id': msg['id'], 'value': v})
+        else:
+            return #TODO: to be filled out        
+
+
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
@@ -66,7 +85,7 @@ class Node(object):
             """
             Send a hello response back to the broker
             """
-            pass
+            self.req.send_json
 
         elif mType == "get":
             """
