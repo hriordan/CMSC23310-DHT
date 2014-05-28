@@ -1,5 +1,7 @@
 # node.py
 import rt
+
+import hashlib
 import random
 import json
 import sys
@@ -38,6 +40,7 @@ class Node(object):
         self.peers = peers
         self.spammer = spammer
         self.rt = rt.RoutingTable
+        self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -45,7 +48,8 @@ class Node(object):
         print self.name, self.peers
 
     def start(self):
-        print self.name, self.peers
+        print self.name, self.peers, self.ringPos
+        self.loop.start()
 
     def handle(self, msg_frames):
         print "Handling!"
@@ -55,6 +59,9 @@ class Node(object):
 
     def shutdown(self, sig, frame):
         print "shutting down"
+        self.loop.stop()
+        self.sub_sock.close()
+        self.req_sock.close()
         sys.exit(0)
 
     def getName(self):
