@@ -79,7 +79,9 @@ class Node(object):
             # TODO: Handle the keystore stuff.
             k = msg['key']
             v = msg['value']
-            print "Got SET: key is", k, "value is", v, "my key is", self.ringPos
+            hashKey = int(hashlib.sha1(k).hexdigest(), 16)
+            print "Got SET: key is", k, "value is", v
+            print "their key is", hashKey, "my key is", self.ringPos
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'hello', 'source': self.name})
