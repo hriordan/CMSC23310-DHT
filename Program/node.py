@@ -49,6 +49,13 @@ class Node(object):
         print self.name, self.peers, self.ringPos
         self.loop.start()
 
+
+    def handle_broker_message(self, msg_frames):
+        print "Handling broker message!"
+        print "len is", len(msg_frames)
+        print "name is", msg_frames[0]
+
+
     def handle(self, msg_frames):
         print "Handling!"
         assert len(msg_frames) == 3
@@ -88,15 +95,11 @@ class Node(object):
             print "Got hello"
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
-            src = msg.['source']
+            src = msg['source']
             print "Got a heartbeat from", src
         else:
             return #TODO: to be filled out        
 
-
-
-    def handle_broker_message(self, msg_frames):
-        print "Handling broker message!"
 
     # Message Handler, expects a message object, conversion will be done before this function
     # is called
