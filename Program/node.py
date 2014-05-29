@@ -86,6 +86,10 @@ class Node(object):
             # Should be the very first message we see.
             self.req.send_json({'type': 'hello', 'source': self.name})
             print "Got hello"
+        elif msg['type'] == 'heartbeat':
+            # TODO: We determine the source and update our routing table.
+            src = msg.['source']
+            print "Got a heartbeat from", src
         else:
             return #TODO: to be filled out        
 
