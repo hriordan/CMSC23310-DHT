@@ -17,10 +17,6 @@ class Node(object):
     def __init__(self, name, pep, rep, spammer, peers):
         self.loop = ioloop.ZMQIOLoop.current()
         self.context = zmq.Context()
-        o = open(name +".ot", "w")
-        e = open(name +".et", "w")
-        sys.stdout = o
-        sys.stderr = e
         print random.randint(0, 15)
         print random.randint(0, 15)
         # SUB socket for receiving messages from the broker
@@ -42,7 +38,6 @@ class Node(object):
         self.spammer = spammer
         self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
-        self.keystore = KeyStore()
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -62,13 +57,20 @@ class Node(object):
 
         if msg['type'] == 'get':
             # TODO: handle errors, esp. KeyError
+            """
             k = msg['key']
             v = self.keystore.GetKey(k)
             if v == None:
-                """Ask succesor for value? """
+               Ask succesor for value?
                 pass
             else:
                 self.req.send_json({'type': 'getResponse', 'id': msg['id'], 'value': v})
+            """
+            print "Got get"
+        elif msg['type'] == 'hello':
+            # Should be the very first message we see.
+            self.req.send_json({'type': 'hello', 'source': self.name})
+            print "Got hello"
         else:
             return #TODO: to be filled out        
 
@@ -84,9 +86,8 @@ class Node(object):
         if mType == "hello":
             """
             Send a hello response back to the broker
-            """
             self.req.send_json
-
+            """
         elif mType == "get":
             """
             If it belongs to us, return a getResponse or getError.
@@ -94,20 +95,20 @@ class Node(object):
             """
             pass
 
-        elif mType = "set":
+        elif mType == "set":
             """
             If key belongs to us, set key, send replica messages to 2 successors of our node, then send setResponse
             Else forward set msg to correct node according to RT
             """
             pass
 
-        elif mType = "replicate":
+        elif mType == "replicate":
             """
             Update keystore based on values sent in
             """
             pass
 
-        elif mType = "merge":
+        elif mType == "merge":
             """
             We are taking over a section of some one elses keyspace, compare our keyvals with the 
             ones sent to us, latest timestamp wins
@@ -115,7 +116,7 @@ class Node(object):
             """
             pass
 
-        elif mType = "heartbeat":
+        elif mType == "heartbeat":
             """
             Used to update timeouts on RT, also contains message digests of all messages recieved since last
             heartbeat was sent. These digests allow for other nodes to clear their queue of messages
@@ -154,7 +155,6 @@ class Node(object):
 
 if __name__ == '__main__':
     import argparse
-    print "out"
     parser = argparse.ArgumentParser()
     parser.add_argument('--pub-endpoint', dest = 'pub_ep',
                         default = 'tcp://127.0.0.1:23310')
@@ -168,6 +168,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.peer_names = args.peer_names.split(',')
 
+    o = open(args.node_name +".ot", "w")
+    e = open(args.node_name +".et", "w")
+    sys.stdout = o
+    sys.stderr = e
+    print "out"
     Node(args.node_name, args.pub_ep, args.router_ep, args.spammer,
          args.peer_names).start()
 
