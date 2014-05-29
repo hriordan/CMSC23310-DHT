@@ -38,6 +38,7 @@ class Node(object):
         self.spammer = spammer
         self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
+        self.keystore = keystore.KeyStore()
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -57,16 +58,28 @@ class Node(object):
 
         if msg['type'] == 'get':
             # TODO: handle errors, esp. KeyError
-            """
             k = msg['key']
             v = self.keystore.GetKey(k)
+            print "key is", k, "value is", v
             if v == None:
-               Ask succesor for value?
+                """
+                  Ask the successor  for the value.
+                  Consult the routing table, and then send the
+                  message.
+                """
                 pass
             else:
-                self.req.send_json({'type': 'getResponse', 'id': msg['id'], 'value': v})
-            """
+                """
+                  If we have the value, we can simply send it back.
+                """
+                self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
+                                    'value' : v})
             print "Got get"
+        elif msg['type'] == 'set':
+            # TODO: Handle the keystore stuff.
+            k = msg['key']
+            v = msg['value']
+            print "Got SET: key is", k, "value is", v, "my key is", self.ringPos
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'hello', 'source': self.name})
