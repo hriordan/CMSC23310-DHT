@@ -1,5 +1,7 @@
 import logging
 
+THRESHOLD = 500
+
 class RoutingTable(object):
     hashMax = 2**160 -1
 
@@ -67,3 +69,10 @@ class RTEntry(object):
 
     def getTimestamp(self):
         return self.timestamp
+
+    def updateTimestamp(self, timestamp):
+        if self.timestamp < timestamp:
+            self.timestamp = timestamp
+        return
+
+

@@ -7,6 +7,7 @@ import json
 import sys
 import signal
 import time
+from datetime import datetime
 import zmq
 import keystore
 from zmq.eventloop import ioloop, zmqstream
@@ -44,7 +45,11 @@ class Node(object):
                     signal.SIGQUIT]:
             signal.signal(sig, self.shutdown)
         print self.name, self.peers
-
+        print time.time()
+        dt = datetime.now()
+        print dt.microsecond
+        dt2 = datetime.now()
+        print dt2.microsecond
     def start(self):
         print self.name, self.peers, self.ringPos
         self.loop.start()
@@ -71,14 +76,14 @@ class Node(object):
               for the requested key.
             """
             k = msg['key']
-            self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
+            hashkey = int(hashlib.sha1(k).hexdigest(), 16)
             v = self.keystore.GetKey(k)
             print "key is", k, "value is", v
             if v == None:
                 """
-                  Ask the successor  for the value.
-                  Consult the routing table, and then send the
-                  message.
+                Ask the successor  for the value.
+                Consult the routing table, and then send the
+                message.
                 """
                 
                 pass
