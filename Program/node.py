@@ -8,6 +8,7 @@ import sys
 import signal
 import time
 import zmq
+import keystore
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
@@ -16,10 +17,6 @@ class Node(object):
     def __init__(self, name, pep, rep, spammer, peers):
         self.loop = ioloop.ZMQIOLoop.current()
         self.context = zmq.Context()
-        o = open(name +".ot", "w")
-        e = open(name +".et", "w")
-        sys.stdout = o
-        sys.stderr = e
         print random.randint(0, 15)
         print random.randint(0, 15)
         # SUB socket for receiving messages from the broker
@@ -41,6 +38,7 @@ class Node(object):
         self.spammer = spammer
         self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
+        self.keystore = keystore.KeyStore()
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -51,12 +49,57 @@ class Node(object):
         print self.name, self.peers, self.ringPos
         self.loop.start()
 
-    def handle(self, msg_frames):
-        print "Handling!"
-        assert 
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
+        print "len is", len(msg_frames)
+        print "name is", msg_frames[0]
+
+
+    def handle(self, msg_frames):
+        print "Handling!"
+        assert len(msg_frames) == 3
+        assert msg_frames[0] == self.name
+        # Second field is the empty delimiter
+        msg = json.loads(msg_frames[2])
+
+        if msg['type'] == 'get':
+            # TODO: handle errors, esp. KeyError
+            k = msg['key']
+            v = self.keystore.GetKey(k)
+            print "key is", k, "value is", v
+            if v == None:
+                """
+                  Ask the successor  for the value.
+                  Consult the routing table, and then send the
+                  message.
+                """
+                pass
+            else:
+                """
+                  If we have the value, we can simply send it back.
+                """
+                self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
+                                    'value' : v})
+            print "Got get"
+        elif msg['type'] == 'set':
+            # TODO: Handle the keystore stuff.
+            k = msg['key']
+            v = msg['value']
+            hashKey = int(hashlib.sha1(k).hexdigest(), 16)
+            print "Got SET: key is", k, "value is", v
+            print "their key is", hashKey, "my key is", self.ringPos
+        elif msg['type'] == 'hello':
+            # Should be the very first message we see.
+            self.req.send_json({'type': 'hello', 'source': self.name})
+            print "Got hello"
+        elif msg['type'] == 'heartbeat':
+            # TODO: We determine the source and update our routing table.
+            src = msg['source']
+            print "Got a heartbeat from", src
+        else:
+            return #TODO: to be filled out        
+
 
     # Message Handler, expects a message object, conversion will be done before this function
     # is called
@@ -65,9 +108,8 @@ class Node(object):
         if mType == "hello":
             """
             Send a hello response back to the broker
+            self.req.send_json
             """
-            pass
-
         elif mType == "get":
             """
             If it belongs to us, return a getResponse or getError.
@@ -75,20 +117,20 @@ class Node(object):
             """
             pass
 
-        elif mType = "set":
+        elif mType == "set":
             """
             If key belongs to us, set key, send replica messages to 2 successors of our node, then send setResponse
             Else forward set msg to correct node according to RT
             """
             pass
 
-        elif mType = "replicate":
+        elif mType == "replicate":
             """
             Update keystore based on values sent in
             """
             pass
 
-        elif mType = "merge":
+        elif mType == "merge":
             """
             We are taking over a section of some one elses keyspace, compare our keyvals with the 
             ones sent to us, latest timestamp wins
@@ -96,7 +138,7 @@ class Node(object):
             """
             pass
 
-        elif mType = "heartbeat":
+        elif mType == "heartbeat":
             """
             Used to update timeouts on RT, also contains message digests of all messages recieved since last
             heartbeat was sent. These digests allow for other nodes to clear their queue of messages
@@ -135,7 +177,6 @@ class Node(object):
 
 if __name__ == '__main__':
     import argparse
-    print "out"
     parser = argparse.ArgumentParser()
     parser.add_argument('--pub-endpoint', dest = 'pub_ep',
                         default = 'tcp://127.0.0.1:23310')
@@ -149,6 +190,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.peer_names = args.peer_names.split(',')
 
+    o = open(args.node_name +".ot", "w")
+    e = open(args.node_name +".et", "w")
+    sys.stdout = o
+    sys.stderr = e
+    print "out"
     Node(args.node_name, args.pub_ep, args.router_ep, args.spammer,
          args.peer_names).start()
 
