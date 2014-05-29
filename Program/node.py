@@ -65,6 +65,11 @@ class Node(object):
 
         if msg['type'] == 'get':
             # TODO: handle errors, esp. KeyError
+            """
+              This isn't really what we want. We want the node to
+              check its routing table to see who's the successor
+              for the requested key.
+            """
             k = msg['key']
             v = self.keystore.GetKey(k)
             print "key is", k, "value is", v
@@ -74,10 +79,13 @@ class Node(object):
                   Consult the routing table, and then send the
                   message.
                 """
+                
                 pass
             else:
                 """
                   If we have the value, we can simply send it back.
+                  We do need to make sure that it's in our space because it's
+                  ours, and not because it's something we're just replicating.
                 """
                 self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
                                     'value' : v})
@@ -96,7 +104,9 @@ class Node(object):
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
-            print "Got a heartbeat from", src
+            timestamp = msg['timestamp']
+            print "Got a heartbeat from", src, "at", timestamp
+            
         else:
             return #TODO: to be filled out        
 
