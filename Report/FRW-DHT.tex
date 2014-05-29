@@ -24,7 +24,11 @@
 \usepackage{listings}
 \usepackage{gnuplottex}
 \usepackage{gnuplot-lua-tikz}
-\lstset{language=C, numbers=left, numberstyle=\footnotesize\color{UCDarkGray}, stepnumber=5, showspaces=false, columns=fixed, showstringspaces=false, breaklines=true, frame=single}
+\usepackage[backend=bibtex]{biblatex}
+
+\addbibresource{bib.bib}
+
+\lstset{language=Python, numbers=left, numberstyle=\footnotesize\color{UCDarkGray}, stepnumber=5, showspaces=false, columns=fixed, showstringspaces=false, breaklines=true, frame=single}
 
 \widowpenalty=10000
 \clubpenalty=10000
@@ -46,7 +50,8 @@
 
 % ---------------------------- Author/ title info --------------------------------------------------
 
-\title{Distributed Hash Table}
+\title{CMSC 23310 Final Project:\\
+Distributed Hash Table}
 
 \author{Josh Feingold \and Henry Nicholas Riordan \and Jake Whitaker}
 
@@ -58,7 +63,33 @@
 
 \maketitle
 
-\section{Introduction}
+\section{Project Overview}\label{sec:overview}
+
+For this project we have decided on implementing a distributed hash table for our keystore. We will focus on producing a key-value store that fits in the BASE model.\cite{Fox_1997_BASE} Our design of the distributed hash table comes from Chord\cite {Stoica_2003_Chord}, Pastry \cite{Rowstron_2001_Pastry}, and Dynamo \cite{DeCandia_2007_Dynamo}. Overall our design will follow that of Dynamo the closest as we liked some of the simple design choices. Our DHT like the others is based on a circular keyspace on which we place our nodes. These nodes will be in control of all keys between it and its predecessor. 
+
+\section{Implementation}\label{sec:imple}
+
+Our implementation follows closely to that of Dynamo. We have a complete routing table and 2 replicas of the key-value pairs.
+
+\subsection{Get}\label{sec:get}
+
+Our get function is very simple. When a get request comes into a node the following occurs. The node checks to see if the key belongs to itself. If it does it will retrieve the key and send the get response message to the broker. If it does not own the key, the node will forward the get request to the correct node, using the complete routing table. To ensure that the get message was received by the second node, that node will send the get response back to the first node who then responds to the broker.
+
+\subsection{Set}
+
+\subsection{Heartbeats}
+
+\subsection{Replication}
+
+\subsection{Merging}
+
+\section{Example Scripts and Discussion}
+
+\section{Conclusion}
+
+\clearpage
+
+\printbibliography
 
 \end{document}
 
