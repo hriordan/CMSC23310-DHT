@@ -71,6 +71,7 @@ class Node(object):
               for the requested key.
             """
             k = msg['key']
+            self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
             v = self.keystore.GetKey(k)
             print "key is", k, "value is", v
             if v == None:
@@ -107,8 +108,6 @@ class Node(object):
             timestamp = msg['timestamp']
             print "Got a heartbeat from", src, "at", timestamp
             
-
-
         else:
             return #TODO: to be filled out        
 
