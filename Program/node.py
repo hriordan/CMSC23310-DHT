@@ -45,14 +45,7 @@ class Node(object):
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
             signal.signal(sig, self.shutdown)
-        """
-        print self.name, self.peers
-        print time.time()
-        dt = datetime.now()
-        print dt.microsecond
-        dt2 = datetime.now()
-        print dt2.microsecond
-        """
+   
     def start(self):
         print self.name, self.peers, self.ringPos
         self.loop.start()
@@ -63,8 +56,7 @@ class Node(object):
         print "len is", len(msg_frames)
         print "name is", msg_frames[0]
 
-        """Idea: hijack handling function to do heartbeat sweeping loop?
-        as well as just simply sending them? Or is there another place to put that?"""
+
     def handle(self, msg_frames):
         print "Handling!"
         assert len(msg_frames) == 3
@@ -73,8 +65,7 @@ class Node(object):
         msg = json.loads(msg_frames[2])
 
         if msg['type'] == 'get':
-            print "node %d got get" % self.name
-
+            #print "node %d got get" % self.name
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
           
@@ -88,7 +79,8 @@ class Node(object):
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
-                """Does not yet take into account dead targets"""
+                self.QueueMessage(forwardMsg) #classes up the message and files it 
+
             else:
                 """
                   If we have the value, we can simply send it back.
@@ -117,7 +109,7 @@ class Node(object):
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
-                """TODO: Make a sort of queue to monitor forwarded messages"""
+                self.QueueMessage(forwardMsg)
 
             else: 
                 """SET KEY"""
@@ -166,68 +158,25 @@ class Node(object):
         for peer in self.peers:
             self.req.send_json('type': 'heartbeat', 'source': self.name, 'destination': peer, 'timestamp': datetime.now())
 
+        """check for dead messages to resend"""
+        self.SweepPendingMessages()
 
-       self.SweepPendingMessages()
+    """takes a message dictionary, classes it, queues it""" 
+    def QueueMessage(self, msg):
+        if msg['type'] == 'set':
+            storedMessage = MessageSetReq(msg['destination'], msg['source'], msg['id'], 
+                msg['key'], msg['value'])
+        elif msg['type'] == 'get':
+            storedMessage = MessageGetReq(msg['destination'], msg['source'], msg['id'], 
+                msg['key'], msg['value'])
 
+        self.pendingMessages.append(storedMessage)
 
 
     """Checks to see if nodes we forwarded messages to have since died. 
        Reforwards messages to new Successors"""
     def SweepPendingMessages(self):
         pass
-
-    # Message Handler, expects a message object, conversion will be done before this function
-    # is called
-    #TODO: I'm not really sure we need this anymore
-    def MsgHandle(self, msg):
-        mType = msg.getType()
-        if mType == "hello":
-            """
-            Send a hello response back to the broker
-            self.req.send_json
-            """
-        elif mType == "get":
-            """
-            If it belongs to us, return a getResponse or getError.
-            Else, forward to correct node according to RT
-            """
-            pass
-
-        elif mType == "set":
-            """
-            If key belongs to us, set key, send replica messages to 2 successors of our node, then send setResponse
-            Else forward set msg to correct node according to RT
-            """
-            pass
-
-        elif mType == "replicate":
-            """
-            Update keystore based on values sent in
-            """
-            pass
-
-        elif mType == "merge":
-            """
-            We are taking over a section of some one elses keyspace, compare our keyvals with the 
-            ones sent to us, latest timestamp wins
-            Send full keystore replicate message to succsors
-            """
-            pass
-
-        elif mType == "heartbeat":
-            """
-            Used to update timeouts on RT, also contains message digests of all messages recieved since last
-            heartbeat was sent. These digests allow for other nodes to clear their queue of messages
-            that they are awaiting confirmation on.
-            Other option is seding some type of ACK for each message recved which might be worse....
-            """
-            pass
-
-        else:
-            """
-            Send log message to broker announcing that the message type is not one we expected.
-            """
-            pass
 
 
 

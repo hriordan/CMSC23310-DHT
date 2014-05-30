@@ -12,6 +12,7 @@ class Message(object):
     def getType(self):
         return self.msgType
 
+#Needed for tracking forwards
 class MessageGetReq(Message):
     def __init__(self, dest, source, mID, key):
         Message.__init__(self, "get", dest, source)
