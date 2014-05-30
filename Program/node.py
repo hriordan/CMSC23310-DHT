@@ -44,12 +44,14 @@ class Node(object):
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
             signal.signal(sig, self.shutdown)
+        """
         print self.name, self.peers
         print time.time()
         dt = datetime.now()
         print dt.microsecond
         dt2 = datetime.now()
         print dt2.microsecond
+        """
     def start(self):
         print self.name, self.peers, self.ringPos
         self.loop.start()
@@ -60,7 +62,8 @@ class Node(object):
         print "len is", len(msg_frames)
         print "name is", msg_frames[0]
 
-
+        """Idea: hijack handling function to do heartbeat sweeping loop?
+        as well as just simply sending them? Or is there another place to put that?"""
     def handle(self, msg_frames):
         print "Handling!"
         assert len(msg_frames) == 3
@@ -78,15 +81,18 @@ class Node(object):
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
             v = self.keystore.GetKey(k)
-            print "key is", k, "value is", v
+          
+            #if rt.isUs(name) ? 
             if v == None:
                 """
                 Ask the successor  for the value.
                 Consult the routing table, and then send the
                 message.
+                Is successor the right term? Dont we know everybody?
                 """
+                target = rt.findKeyOwner(hashkey) #needs to be written
+                #self.req.send_json(...,target,...)
                 
-                pass
             else:
                 """
                   If we have the value, we can simply send it back.
@@ -96,6 +102,7 @@ class Node(object):
                 self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
                                     'value' : v})
             print "Got get"
+            
         elif msg['type'] == 'set':
             # TODO: Handle the keystore stuff.
             k = msg['key']
@@ -103,22 +110,32 @@ class Node(object):
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             print "Got SET: key is", k, "value is", v
             print "their key is", hashKey, "my key is", self.ringPos
+            #TODO: need to actually send messages now
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'hello', 'source': self.name})
             print "Got hello"
+        
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
             timestamp = msg['timestamp']
             print "Got a heartbeat from", src, "at", timestamp
             
+            rtentry = rt.findRTEntry(src)
+            if rtentry != None: 
+                rtentry.updateTimestamp(timestamp) 
+            else:
+                self.rt.addRTEntry(src)
+
+
         else:
             return #TODO: to be filled out        
 
 
     # Message Handler, expects a message object, conversion will be done before this function
     # is called
+    #TODO: I'm not really sure we need this anymore
     def MsgHandle(self, msg):
         mType = msg.getType()
         if mType == "hello":
