@@ -67,6 +67,10 @@ Distributed Hash Table}
 
 For this project we have decided on implementing a distributed hash table for our keystore. We will focus on producing a key-value store that fits in the BASE model.\cite{Fox_1997_BASE} Our design of the distributed hash table comes from Chord\cite {Stoica_2003_Chord}, Pastry \cite{Rowstron_2001_Pastry}, and Dynamo \cite{DeCandia_2007_Dynamo}. Overall our design will follow that of Dynamo the closest as we liked some of the simple design choices. Our DHT like the others is based on a circular keyspace on which we place our nodes. These nodes will be in control of all keys between it and its predecessor. 
 
+For fault tolerance we will use replicas in order to be able to remain available and consistent after a fail stop. We will use 2 replicas of all keys in addition to the main keystore. In order to detect failures we use a heartbeat that is sent every \textbf{[INSERT HEARTBEAT TIME HERE]} and if we do not receive a heartbeat in \textbf{[INSERT HEARTBEAT/ NODE TIMEOUT HERE]} then we remove the node from our routing table and adjust our replicas as needed. If we get a heartbeat from a node we do not have in our routing table, we add them and merge their keystore with our own, also adjusting what keys we own and replicate.
+
+When a node communicates with another node, it stores the message until we receive a response to that message. This ensure that we do not fail to respond to a request because a node failed and we have not detected that failure yet.
+
 \section{Implementation}\label{sec:imple}
 
 Our implementation follows closely to that of Dynamo. We have a complete routing table and 2 replicas of the key-value pairs.
@@ -75,17 +79,32 @@ Our implementation follows closely to that of Dynamo. We have a complete routing
 
 Our get function is very simple. When a get request comes into a node the following occurs. The node checks to see if the key belongs to itself. If it does it will retrieve the key and send the get response message to the broker. If it does not own the key, the node will forward the get request to the correct node, using the complete routing table. To ensure that the get message was received by the second node, that node will send the get response back to the first node who then responds to the broker.
 
-\subsection{Set}
+\subsection{Set}\label{sec:set}
 
-\subsection{Heartbeats}
+The set function first checks if the key being set is in our section of the keyspace. If not we forward the message to the correct node, who after completing this function verifies completion by sending a message to the original node. If the key is in our section of the keyspace we set the value in our keystore and then send two replication messages, one to our successor and one to our successor's successor. This creates 2 replicas in case the first node fails. After completion we either send a setResponse to the broker or the node who forwarded the request.
 
-\subsection{Replication}
+\subsection{Heartbeats}\label{sec:HB}
 
-\subsection{Merging}
+Every \textbf{[HEART BEAT TIME]} we send a heartbeat message to all nodes on the network. We broadcast this even beyond our routing table in case a new node enters the network that we need to announce ourselves to. These heartbeats are used to track what nodes on the network are still alive and their absence is how we detect failed nodes and partitions.
 
-\section{Example Scripts and Discussion}
+\subsection{Replication}\label{sec:Rep}
 
-\section{Conclusion}
+A node only replicates keys it is sent on a replicate message. It stores these keys in the same keystore as its main keys so that if its predecessor fails, it will automatically be able to handle the requests for that keyspace. A node will only delete keys from its keystore if it sees a new node enter that reduces the keyspace that this node would replicate. This check occurs when the routing table is changed due to a heartbeat from an unknown node.
+
+\subsection{Merging}\label{sec:Merg}
+
+\section{Example Scripts and Discussion}\label{sec:Ex}
+
+\begin{lstlisting}[language={}, caption={Example Script 1}, basicstyle=\ttfamily]
+start test
+send {"destination": ["test"], "foo": "bar", "type": "foo"}
+get test foo
+send {"destination": ["test"], "bar": "baz", "type": "foo"}
+set foo 42
+get foo
+\end{lstlisting}
+
+\section{Conclusion}\label{sec:Conc}
 
 \clearpage
 
