@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 import logging
 
-THRESHOLD = 500
+THRESHOLD = 50000
+
 
 class RoutingTable(object):
     hashMax = 2**160 -1
@@ -55,6 +57,22 @@ class RoutingTable(object):
                 ret = e
         return ret
 
+    def rtSweep(self, timestamp):
+        """
+        Sweeps through the routing table and removes dead nodes.
+
+        This is accomplished by checking if the timestamp of the last
+        heartbeat was within the last THRESHOLD microseconds.
+        """
+        dead_keys = []
+        for k in self.rt:
+            entry = self.rt[k]
+            td = timestamp - entry.timestamp
+            if td. days > 0 or td.seconds > 0 or td.microseconds > THRESHOLD:
+                dead_keys.append(k)
+        for d in dead_keys:
+            del self.rt[d]
+
 class RTEntry(object):
     def __init__(self, name, ringpos, timestamp):
         self.name = name
@@ -71,8 +89,7 @@ class RTEntry(object):
         return self.timestamp
 
     def updateTimestamp(self, timestamp):
-        if self.timestamp < timestamp:
+        td = timestamp - self.timestamp
+        if td.days > 0 or td.seconds > 0 or td.microseconds > 0:
             self.timestamp = timestamp
         return
-
-

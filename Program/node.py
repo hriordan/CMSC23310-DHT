@@ -131,7 +131,9 @@ class Node(object):
 
         else:
             return #TODO: to be filled out        
-
+        # Before we return, we should sweep the routing table.
+        self.rt.rtSweep(datetime.now())
+        print "SWEEPING"
 
     # Message Handler, expects a message object, conversion will be done before this function
     # is called
