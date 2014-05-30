@@ -40,6 +40,7 @@ class Node(object):
         self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
         self.keystore = keystore.KeyStore()
+        self.pendingMessages = [] 
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -76,7 +77,6 @@ class Node(object):
 
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
-            v = self.keystore.GetKey(k).value
           
             keyholder = self.rt.findSucc(hashkey)
             if  keyholder != self.ringPos: #If the keyholder is not me...
@@ -110,30 +110,26 @@ class Node(object):
             k = msg['key']
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
-            print "Got SET: key is", k, "value is", v
-            print "their key is", hashKey, "my key is", self.ringPos
+        
 
             keyholder = self.rt.findSucc(hashkey)
             if  keyholder != self.ringPos: #If the keyholder is not me...
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
-            
+                """TODO: Make a sort of queue to monitor forwarded messages"""
+
             else: 
                 """SET KEY"""
-                entry = self.keystore.GetKey(k)
-                if entry != None:
-                    pass
-                else:
-                    pass
-
-
+                KeyObj = KeyVal(, k, v, datetime.now())
+                self.keystore.AddKey(KeyObj)
+                self.req.send_json('type': 'setResponse', 'id': msg['id'], 'value': v)
 
 
 
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
-            self.req.send_json({'type': 'hello', 'source': self.name})
+            self.req.send_json({'type': 'helloResponse', 'source': self.name})
             print "Got hello"
         
         elif msg['type'] == 'heartbeat':
@@ -148,12 +144,37 @@ class Node(object):
             else:
                 self.rt.addRTEntry(src)
 
+        elif msg['type'] == 'getResponse' or msg['type'] == 'setResponse':
+            """this is presumable from a  node we forwarded a request to. send it back to the client"""
+            newMsg = msg
+            del newMsg['source']
+            del newMsg['destination']
+            self.req.send_json(newMsg)
+
+
 
         else:
-            return #TODO: to be filled out        
-        # Before we return, we should sweep the routing table.
+            print "unrecognized message type ("%s") recieved by node %d" % (msg['type'], self.name) #TODO: to be filled out        
+
+        
+        """Let's put all "maintenance" actions here, as this is the best "loop" we have at the moment"""
+
+        """Sweeping function to retire dead nodes"""
         self.rt.rtSweep(datetime.now())
-        print "SWEEPING"
+
+        """send heartbeat to all peers"""
+        for peer in self.peers:
+            self.req.send_json('type': 'heartbeat', 'source': self.name, 'destination': peer, 'timestamp': datetime.now())
+
+
+       self.SweepPendingMessages()
+
+
+
+    """Checks to see if nodes we forwarded messages to have since died. 
+       Reforwards messages to new Successors"""
+    def SweepPendingMessages(self):
+        pass
 
     # Message Handler, expects a message object, conversion will be done before this function
     # is called
