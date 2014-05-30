@@ -72,36 +72,38 @@ class Node(object):
         msg = json.loads(msg_frames[2])
 
         if msg['type'] == 'get':
-            # TODO: handle errors, esp. KeyError
-            """
-              This isn't really what we want. We want the node to
-              check its routing table to see who's the successor
-              for the requested key.
-            """
+            print "node %d got get" % self.name
+
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
-            v = self.keystore.GetKey(k)
+            v = self.keystore.GetKey(k).value
           
-            #if rt.isUs(name) ? 
-            if v == None:
+            keyholder = self.rt.findSucc(hashkey)
+            if  keyholder != self.ringPos: #If the keyholder is not me...
                 """
                 Ask the successor  for the value.
                 Consult the routing table, and then send the
                 message.
-                Is successor the right term? Dont we know everybody?
                 """
-                target = rt.findKeyOwner(hashkey) #needs to be written
-                #self.req.send_json(...,target,...)
-                
+                forwardMsg = msg
+                forwardMsg['destination'] = keyholder 
+                self.req.send_json(forwardMsg)
+                """Does not yet take into account dead targets"""
             else:
                 """
                   If we have the value, we can simply send it back.
                   We do need to make sure that it's in our space because it's
                   ours, and not because it's something we're just replicating.
                 """
-                self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
+                entry = self.keystore.GetKey(k)
+                if entry != None:
+                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
                                     'value' : v})
-            print "Got get"
+                else: 
+                    """Send error"""
+                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
+                                    'error' : "No match to key found!"})
+            
             
         elif msg['type'] == 'set':
             # TODO: Handle the keystore stuff.
@@ -110,7 +112,25 @@ class Node(object):
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             print "Got SET: key is", k, "value is", v
             print "their key is", hashKey, "my key is", self.ringPos
-            #TODO: need to actually send messages now
+
+            keyholder = self.rt.findSucc(hashkey)
+            if  keyholder != self.ringPos: #If the keyholder is not me...
+                forwardMsg = msg
+                forwardMsg['destination'] = keyholder 
+                self.req.send_json(forwardMsg)
+            
+            else: 
+                """SET KEY"""
+                entry = self.keystore.GetKey(k)
+                if entry != None:
+                    pass
+                else:
+                    pass
+
+
+
+
+
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'hello', 'source': self.name})
