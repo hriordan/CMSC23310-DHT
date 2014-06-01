@@ -35,6 +35,7 @@ class Node(object):
         self.req.on_recv(self.handle_broker_message)
 
         self.name = name
+        self.connected = False
         self.peers = peers
         self.spammer = spammer
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
@@ -50,12 +51,22 @@ class Node(object):
         print self.name, self.peers, self.ringPos
         self.loop.start()
 
+    def sendHB(self):
+        """send heartbeat to all peers"""
+        dt = datetime.now()
+        dtatts = [dt.year, dt.month, dt.day, dt.hour,
+                  dt.minute, dt.second, dt.microsecond]
+        print "sending heartbeats", dtatts
+        for peer in self.peers:
+            self.req.send_json({'type': 'heartbeat', 'source': self.name,
+                                'destination': peer, 'timestamp': dtatts})
+        hbfn = ioloop.DelayedCallback(self.sendHB, 25)
+        hbfn.start()
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
         print "len is", len(msg_frames)
         print "name is", msg_frames[0]
-
 
     def handle(self, msg_frames):
         print "Handling!"
@@ -71,8 +82,12 @@ class Node(object):
         self.rt.rtSweep(datetime.now())
         if msg['type'] == 'hello':
             # Should be the very first message we see.
-            self.req.send_json({'type': 'helloResponse', 'source': self.name})
-            print "Got hello"
+            if not self.connected:
+                self.connected = True
+                self.req.send_json({'type': 'helloResponse', 'source': self.name})
+                hbfn = ioloop.DelayedCallback(self.sendHB, 25)
+                hbfn.start()
+                print "Got hello"
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
@@ -145,18 +160,6 @@ class Node(object):
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
 
-        """send heartbeat to all peers"""
-        dt = datetime.now()
-        dtatts = [dt.year, dt.month, dt.day, dt.hour,
-                  dt.minute, dt.second, dt.microsecond]
-        print "sending heartbeats", dtatts
-        """
-        self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
-                            'destination' : self.peers, 'timestamp' : dtatts})
-        """
-        for peer in self.peers:
-            self.req.send_json({'type': 'heartbeat', 'source': self.name,
-                                'destination': peer, 'timestamp': dtatts})
         """check for dead messages to resend"""
         self.SweepPendingMessages()
 
