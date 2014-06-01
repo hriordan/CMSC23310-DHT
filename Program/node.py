@@ -37,8 +37,8 @@ class Node(object):
         self.name = name
         self.peers = peers
         self.spammer = spammer
-        self.rt = rt.RoutingTable()
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
+        self.rt = rt.RoutingTable(name, self.ringPos)
         self.keystore = keystore.KeyStore()
         self.pendingMessages = [] 
 
