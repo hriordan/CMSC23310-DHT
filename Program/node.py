@@ -102,9 +102,8 @@ class Node(object):
             k = msg['key']
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
-        
 
-            keyholder = self.rt.findSucc(hashkey)
+            keyholder = self.rt.findSucc(hashKey)
             if  keyholder != self.ringPos: #If the keyholder is not me...
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
@@ -151,9 +150,12 @@ class Node(object):
         self.rt.rtSweep(datetime.now())
 
         """send heartbeat to all peers"""
+        dt = datetime.now()
+        dtatts = [dt.year, dt.month, dt.day, dt.hour,
+                  dt.minute, dt.second, dt.microsecond]
         for peer in self.peers:
             self.req.send_json({'type': 'heartbeat', 'source': self.name,
-                                'destination': peer, 'timestamp': datetime.now()})
+                                'destination': peer, 'timestamp': dtatts})
 
         """check for dead messages to resend"""
         self.SweepPendingMessages()

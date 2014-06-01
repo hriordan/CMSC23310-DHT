@@ -1,0 +1,4 @@
+start Alice
+start Bob
+set Bob Bob 75
+get Bob Bob
