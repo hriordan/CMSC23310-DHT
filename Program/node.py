@@ -122,7 +122,7 @@ class Node(object):
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             """ Find the successor according to the routing table. """
-            (holderName, holderDist) = self.rt.findSucc(hashKey)
+            keyholder = self.rt.findSucc(hashKey)
 
             """
             Compare the proposed successor to ourselves. This is required
