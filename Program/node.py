@@ -105,20 +105,16 @@ class Node(object):
                            'key' : msg['key'], 'destination' : keyholder}
                 self.req.send_json(fwrdmsg)
                 self.QueueMessage(fwrdmsg)
-                forwardMsg['destination'] = keyholder 
-                self.req.send_json(forwardMsg)
-                self.QueueMessage(forwardMsg) #classes up the message and files it 
-
             else:
                 """
                   If we have the value, we can simply send it back.
                   We do need to make sure that it's in our space because it's
                   ours, and not because it's something we're just replicating.
                 """
-                entry = self.keystore.GetKey(k)
+                entry = self.keystore.GetKey(hashkey)
                 if entry != None:
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
-                                    'value' : v})
+                                    'value' : entry.value})
                 else: 
                     """Send error"""
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
@@ -136,7 +132,6 @@ class Node(object):
             Compare the proposed successor to ourselves. This is required
             because our position isn't actually in the routing table.
             """
-            
             if  keyholder != self.name: #If the keyholder is not me...
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
@@ -144,7 +139,7 @@ class Node(object):
                 self.QueueMessage(forwardMsg)
             else: 
                 """SET KEY"""
-                KeyObj = KeyVal(k, v, datetime.now())
+                KeyObj = keystore.KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
                 self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
         elif msg['type'] == "getResponse":
@@ -152,7 +147,7 @@ class Node(object):
             self.req.send_json(msg) #forward to broker/client
             self.deleteMessage(msg)
 
-        elif msg['type'] == "setRepsonse":
+        elif msg['type'] == "setResponse":
             del msg['destination']
             self.req.send_json(msg) #forward to broker/client
             self.deleteMessage(msg)
