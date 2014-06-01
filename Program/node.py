@@ -64,7 +64,27 @@ class Node(object):
         # Second field is the empty delimiter
         msg = json.loads(msg_frames[2])
 
-        if msg['type'] == 'get':
+        if msg['type'] == 'hello':
+            # Should be the very first message we see.
+            self.req.send_json({'type': 'helloResponse', 'source': self.name})
+            print "Got hello"
+        elif msg['type'] == 'heartbeat':
+            # TODO: We determine the source and update our routing table.
+            src = msg['source']
+            [y, m, d, h, m, s, us] = msg['timestamp']
+            timestamp = datetime(year = y, month = m, day = d,
+                                 hour = h, minute = m, second = s,
+                                 microsecond = us)
+            print "Got a heartbeat from", src, "at", y, m, d, h, m, s, us
+            
+            rtentry = rt.findRTEntry(src)
+            if rtentry != None: 
+                rtentry.updateTimestamp(timestamp) 
+            else:
+                srcPos = int(hashlib.sha1(src).hexdigest(), 16)
+                newEntry = RTEntry(src, srcPos, timestamp)
+                self.rt.addRTEntry(newEntry)
+        elif msg['type'] == 'get':
             #print "node %d got get" % self.name
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
@@ -102,8 +122,14 @@ class Node(object):
             k = msg['key']
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
+            """ Find the successor according to the routing table. """
+            (holderName, holderDist) = self.rt.findSucc(hashKey)
 
-            keyholder = self.rt.findSucc(hashKey)
+            """
+            Compare the proposed successor to ourselves. This is required
+            because our position isn't actually in the routing table.
+            """
+            
             if  keyholder != self.ringPos: #If the keyholder is not me...
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
@@ -116,23 +142,6 @@ class Node(object):
                 self.keystore.AddKey(KeyObj)
                 self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
 
-
-
-        elif msg['type'] == 'hello':
-            # Should be the very first message we see.
-            self.req.send_json({'type': 'helloResponse', 'source': self.name})
-            print "Got hello"
-        elif msg['type'] == 'heartbeat':
-            # TODO: We determine the source and update our routing table.
-            src = msg['source']
-            timestamp = msg['timestamp']
-            print "Got a heartbeat from", src, "at", timestamp
-            
-            rtentry = rt.findRTEntry(src)
-            if rtentry != None: 
-                rtentry.updateTimestamp(timestamp) 
-            else:
-                self.rt.addRTEntry(src)
         elif msg['type'] == 'getResponse' or msg['type'] == 'setResponse':
             """this is presumable from a  node we forwarded a request to. send it back to the client"""
             newMsg = msg
