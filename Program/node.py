@@ -76,13 +76,14 @@ class Node(object):
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
-            [y, m, d, h, m, s, us] = msg['timestamp']
-            timestamp = datetime(year = y, month = m, day = d,
-                                 hour = h, minute = m, second = s,
-                                 microsecond = us)
-            print "Got a heartbeat from", src, "at", y, m, d, h, m, s, us
+            dt = msg['timestamp']
+            print "got heartbeat from", src, "at", dt
+            timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
+                                 day = int(dt[2]), hour = int(dt[3]),
+                                 minute = int(dt[4]), second = int(dt[5]),
+                                 microsecond = int(dt[6]))
             
-            rtentry = rt.findRTEntry(src)
+            rtentry = self.rt.findRTEntry(src)
             if rtentry != None: 
                 rtentry.updateTimestamp(timestamp) 
             else:
@@ -90,7 +91,6 @@ class Node(object):
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
                 self.rt.addRTEntry(newEntry)
         elif msg['type'] == 'get':
-            #print "node %d got get" % self.name
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
 
@@ -106,11 +106,7 @@ class Node(object):
                 self.req.send_json(fwrdmsg)
                 self.QueueMessage(fwrdmsg)
             else:
-                """
-                  If we have the value, we can simply send it back.
-                  We do need to make sure that it's in our space because it's
-                  ours, and not because it's something we're just replicating.
-                """
+                """ If we have the value, we can simply send it back. """
                 entry = self.keystore.GetKey(hashkey)
                 if entry != None:
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
@@ -119,24 +115,18 @@ class Node(object):
                     """Send error"""
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
                                     'error' : "No match to key found!"})
-                     
         elif msg['type'] == 'set':
             # TODO: Handle the keystore stuff.
             k = msg['key']
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
-            """ Find the successor according to the routing table. """
             keyholder = self.rt.findSucc(hashKey)
-
-            """
-            Compare the proposed successor to ourselves. This is required
-            because our position isn't actually in the routing table.
-            """
             if  keyholder != self.name: #If the keyholder is not me...
-                forwardMsg = msg
-                forwardMsg['destination'] = keyholder 
-                self.req.send_json(forwardMsg)
-                self.QueueMessage(forwardMsg)
+                fwrdmsg = {'type' : 'setForward', 'source' : self.name,
+                           'key' : msg['key'], 'value' : v,
+                           'destination' : keyholder}
+                self.req.send_json(fwrdmsg)
+                self.QueueMessage(fwrdmsg)
             else: 
                 """SET KEY"""
                 KeyObj = keystore.KeyVal(k, v, datetime.now())
@@ -151,25 +141,22 @@ class Node(object):
             del msg['destination']
             self.req.send_json(msg) #forward to broker/client
             self.deleteMessage(msg)
-            
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
-
-        
-        """Let's put all "maintenance" actions here, as this is the best "loop" we have at the moment"""
-
-        """Sweeping function to retire dead nodes"""
-        self.rt.rtSweep(datetime.now())
 
         """send heartbeat to all peers"""
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                   dt.minute, dt.second, dt.microsecond]
+        print "sending heartbeats", dtatts
+        """
+        self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
+                            'destination' : self.peers, 'timestamp' : dtatts})
+        """
         for peer in self.peers:
             self.req.send_json({'type': 'heartbeat', 'source': self.name,
                                 'destination': peer, 'timestamp': dtatts})
-
         """check for dead messages to resend"""
         self.SweepPendingMessages()
 

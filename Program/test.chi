@@ -1,4 +1,4 @@
-start Alice
-start Bob
+start Alice --peer-names Bob
+start Bob --peer-names Alice
 set Bob Bob 75
 get Bob Bob

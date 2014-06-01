@@ -14,7 +14,7 @@ class RoutingTable(object):
 
     #Adds RT Entry to table
     def addRTEntry(self, rt_entry):
-        if rt_entry.getName() not in rt.keys():
+        if rt_entry.getName() not in self.rt.keys():
             self.rt[rt_entry.getName()] = rt_entry
         else:
             print "ERROR: entry already in routing table, this should never happen"
@@ -27,7 +27,7 @@ class RoutingTable(object):
     
     #Finds an RTEntry based on the name
     def findRTEntry(self, name):
-        if name in rt.keys():
+        if name in self.rt.keys():
             return rt[name]
         else:
             return None
