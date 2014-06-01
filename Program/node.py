@@ -64,6 +64,11 @@ class Node(object):
         # Second field is the empty delimiter
         msg = json.loads(msg_frames[2])
 
+        """
+        Before we do anything, we sweep the routing table to make sure that 
+        it's up to date before we try to send any messages.
+        """
+        self.rt.rtSweep(datetime.now())
         if msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'helloResponse', 'source': self.name})
@@ -82,21 +87,24 @@ class Node(object):
                 rtentry.updateTimestamp(timestamp) 
             else:
                 srcPos = int(hashlib.sha1(src).hexdigest(), 16)
-                newEntry = RTEntry(src, srcPos, timestamp)
+                newEntry = rt.RTEntry(src, srcPos, timestamp)
                 self.rt.addRTEntry(newEntry)
         elif msg['type'] == 'get':
             #print "node %d got get" % self.name
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
-          
+
             keyholder = self.rt.findSucc(hashkey)
-            if  keyholder != self.ringPos: #If the keyholder is not me...
+            if  keyholder != self.name: #If the keyholder is not me...
                 """
                 Ask the successor  for the value.
                 Consult the routing table, and then send the
                 message.
                 """
-                forwardMsg = msg
+                fwrdmsg = {'type' : 'getForward', 'source' : self.name,
+                           'key' : msg['key'], 'destination' : keyholder}
+                self.req.send_json(fwrdmsg)
+                self.QueueMessage(fwrdmsg)
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
                 self.QueueMessage(forwardMsg) #classes up the message and files it 
@@ -129,7 +137,7 @@ class Node(object):
             because our position isn't actually in the routing table.
             """
             
-            if  keyholder != self.ringPos: #If the keyholder is not me...
+            if  keyholder != self.name: #If the keyholder is not me...
                 forwardMsg = msg
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
