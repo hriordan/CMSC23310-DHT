@@ -113,9 +113,9 @@ class Node(object):
 
             else: 
                 """SET KEY"""
-                KeyObj = KeyVal(, k, v, datetime.now())
+                KeyObj = KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
-                self.req.send_json('type': 'setResponse', 'id': msg['id'], 'value': v)
+                self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
 
 
 
@@ -123,7 +123,6 @@ class Node(object):
             # Should be the very first message we see.
             self.req.send_json({'type': 'helloResponse', 'source': self.name})
             print "Got hello"
-        
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
@@ -135,18 +134,15 @@ class Node(object):
                 rtentry.updateTimestamp(timestamp) 
             else:
                 self.rt.addRTEntry(src)
-
         elif msg['type'] == 'getResponse' or msg['type'] == 'setResponse':
             """this is presumable from a  node we forwarded a request to. send it back to the client"""
             newMsg = msg
             del newMsg['source']
             del newMsg['destination']
             self.req.send_json(newMsg)
-
-
-
         else:
-            print "unrecognized message type ("%s") recieved by node %d" % (msg['type'], self.name) #TODO: to be filled out        
+            print "unrecognized message type", msg['type'], "received by node", self.name
+            #TODO: to be filled out        
 
         
         """Let's put all "maintenance" actions here, as this is the best "loop" we have at the moment"""
@@ -156,7 +152,8 @@ class Node(object):
 
         """send heartbeat to all peers"""
         for peer in self.peers:
-            self.req.send_json('type': 'heartbeat', 'source': self.name, 'destination': peer, 'timestamp': datetime.now())
+            self.req.send_json({'type': 'heartbeat', 'source': self.name,
+                                'destination': peer, 'timestamp': datetime.now()})
 
         """check for dead messages to resend"""
         self.SweepPendingMessages()
