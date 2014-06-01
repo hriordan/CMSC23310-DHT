@@ -95,8 +95,7 @@ class Node(object):
                     """Send error"""
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
                                     'error' : "No match to key found!"})
-            
-            
+                     
         elif msg['type'] == 'set':
             # TODO: Handle the keystore stuff.
             k = msg['key']
@@ -109,19 +108,27 @@ class Node(object):
                 forwardMsg['destination'] = keyholder 
                 self.req.send_json(forwardMsg)
                 self.QueueMessage(forwardMsg)
-
             else: 
                 """SET KEY"""
                 KeyObj = KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
                 self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
 
+        elif msg['type'] == "getResponse":
+            del msg['destination']
+            self.req.send_json(msg) #forward to broker/client
+            self.deleteMessage(msg)
 
-
+        elif msg['type'] == "setRepsonse":
+            del msg['destination']
+            self.req.send_json(msg) #forward to broker/client
+            self.deleteMessage(msg)
+            
         elif msg['type'] == 'hello':
             # Should be the very first message we see.
             self.req.send_json({'type': 'helloResponse', 'source': self.name})
             print "Got hello"
+
         elif msg['type'] == 'heartbeat':
             # TODO: We determine the source and update our routing table.
             src = msg['source']
@@ -160,6 +167,11 @@ class Node(object):
         """check for dead messages to resend"""
         self.SweepPendingMessages()
 
+        """TBA: merging and partitioning functionality"""
+        #self.CheckMerge()
+        #self.CheckPartition() 
+
+
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
         if msg['type'] == 'set':
@@ -171,11 +183,26 @@ class Node(object):
 
         self.pendingMessages.append(storedMessage)
 
+    def deleteMessage(self, msg):
+        for i, mess in enumerate(self.pendingMessages):
+            if mess.mID == msg['id']:
+                del self.pendingMessages[i]
+                return
+        print "could not find message to delete"
+
+
 
     """Checks to see if nodes we forwarded messages to have since died. 
        Reforwards messages to new Successors"""
     def SweepPendingMessages(self):
-        pass
+        for message in self.pendingMessages:
+            dest = message.destination
+            if self.rt.findRTEntry(dest) == None: 
+                hashKey = int(hashlib.sha1(message.key).hexdigest(), 16)
+                message.destination = self.rt.findSucc(hashKey) 
+                newMsg = message.convertToDict()
+                self.req.send_json(newMsg)
+
 
 
 
