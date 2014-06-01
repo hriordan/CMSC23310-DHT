@@ -12,6 +12,23 @@ class Message(object):
     def getType(self):
         return self.msgType
 
+    def convertToDict(self):
+        newdict = {}
+        if self.msgType == "get":
+            newdict["id"] = self.mID
+            newdict["source"] = self.source
+            newdict["destination"] = self.destination
+            newdict["key"] = self.key
+        elif self.msgType == "set":
+            newdict["id"] = self.mID
+            newdict["source"] = self.source
+            newdict["destination"] = self.destination
+            newdict["key"] = self.keyvals
+            newdict["value"] = self.value 
+        else:
+            print "not valid type"
+        return newdict 
+
 #Needed for tracking forwards
 class MessageGetReq(Message):
     def __init__(self, dest, source, mID, key):
