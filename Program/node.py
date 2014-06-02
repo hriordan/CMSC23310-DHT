@@ -57,11 +57,15 @@ class Node(object):
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                   dt.minute, dt.second, dt.microsecond]
         print "sending heartbeats", dtatts
+        self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
+                            'destination' : self.peers, 'timestamp' : dtatts})
+        """
         for peer in self.peers:
             self.req.send_json({'type': 'heartbeat', 'source': self.name,
                                 'destination': [peer], 'timestamp': dtatts})
             print "sending to", peer
-        hbfn = ioloop.DelayedCallback(self.sendHB, 25)
+        """
+        hbfn = ioloop.DelayedCallback(self.sendHB, 100)
         hbfn.start()
 
     def handle_broker_message(self, msg_frames):
@@ -86,7 +90,7 @@ class Node(object):
             if not self.connected:
                 self.connected = True
                 self.req.send_json({'type': 'helloResponse', 'source': self.name})
-                hbfn = ioloop.DelayedCallback(self.sendHB, 25)
+                hbfn = ioloop.DelayedCallback(self.sendHB, 100)
                 hbfn.start()
                 print "Got hello"
         elif msg['type'] == 'heartbeat':

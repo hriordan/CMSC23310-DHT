@@ -28,7 +28,7 @@ class RoutingTable(object):
     #Finds an RTEntry based on the name
     def findRTEntry(self, name):
         if name in self.rt.keys():
-            return rt[name]
+            return self.rt[name]
         else:
             return None
 
