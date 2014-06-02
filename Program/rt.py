@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 import logging
 
-THRESHOLD = 50000
-
+THRESHOLD = 200000
+HASHMAX = 2 ** 160
 
 class RoutingTable(object):
-    hashMax = 2**160
 
     def __init__(self, name, pos):
         self.name = name
@@ -54,7 +53,7 @@ class RoutingTable(object):
             remaining distance on the ring plus our position.
             """
             cName = self.name
-            cDist = hashmax - key + self.pos
+            cDist = HASHMAX - key + self.pos
         """
         Now we can iterate over the hash to see if we can
         find anything better.
@@ -75,7 +74,7 @@ class RoutingTable(object):
                 If the node is behind the key, the distance is the remaining
                 distance in the ring plus our own position.
                 """
-                nDist = hashmax + entry.ringPos - key
+                nDist = HASHMAX + entry.ringPos - key
             """ Now compare the distance to the previous one. """
             if nDist < cDist:
                 cDist = nDist
@@ -88,7 +87,7 @@ class RoutingTable(object):
         dist = None
         for e in self.rt:
             if e.getRingPos() > key:
-                d = (hashmax - e.getRingPos()) + key
+                d = (HASHMAX - e.getRingPos()) + key
             else:
                 d = key - e.getRingPos()
             if dist == None or d < dist:
@@ -115,14 +114,14 @@ class RoutingTable(object):
 class RTEntry(object):
     def __init__(self, name, ringpos, timestamp):
         self.name = name
-        self.ringpos = ringpos
+        self.ringPos = ringpos
         self.timestamp = timestamp
         
     def getName(self):
         return self.name
 
     def getRingPos(self):
-        return self.ringpos
+        return self.ringPos
 
     def getTimestamp(self):
         return self.timestamp

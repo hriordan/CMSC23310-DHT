@@ -7,6 +7,7 @@ import json
 import sys
 import signal
 import time
+import copy
 from datetime import datetime
 import zmq
 import keystore
@@ -56,7 +57,7 @@ class Node(object):
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                   dt.minute, dt.second, dt.microsecond]
-        print "sending heartbeats", dtatts
+#        print "sending heartbeats", dtatts
         self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
                             'destination' : self.peers, 'timestamp' : dtatts})
         """
@@ -70,8 +71,8 @@ class Node(object):
 
     def handle_broker_message(self, msg_frames):
         print "Handling broker message!"
-        print "len is", len(msg_frames)
-        print "name is", msg_frames[0]
+#        print "len is", len(msg_frames)
+#        print "name is", msg_frames[0]
 
     def handle(self, msg_frames):
         print "Handling!"
@@ -97,7 +98,7 @@ class Node(object):
             # TODO: We determine the source and update our routing table.
             src = msg['source']
             dt = msg['timestamp']
-            print "got heartbeat from", src, "at", dt
+#            print "got heartbeat from", src, "at", dt
             timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
                                  day = int(dt[2]), hour = int(dt[3]),
                                  minute = int(dt[4]), second = int(dt[5]),
@@ -121,16 +122,27 @@ class Node(object):
                 Consult the routing table, and then send the
                 message.
                 """
-                fwrdmsg = {'type' : 'getForward', 'source' : self.name,
-                           'key' : msg['key'], 'destination' : keyholder}
-                self.req.send_json(fwrdmsg)
-                self.QueueMessage(fwrdmsg)
+                msgCpy = copy.deepcopy(msg)
+                msgCpy['source'] = self.name
+                msgCpy['destination'] = [keyholder]
+                print "original", msg
+                print "copy", msgCpy
+                self.req.send_json(msgCpy)
+                self.QueueMessage(msgCpy)
             else:
                 """ If we have the value, we can simply send it back. """
                 entry = self.keystore.GetKey(hashkey)
                 if entry != None:
-                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
-                                    'value' : entry.value})
+                    print "Received get id", msg['id']
+                    response = {'type' : 'getResponse', 'id' : msg['id'],
+                                'value' : entry.value}
+                    if 'source' in msg.keys():
+                        print "relayed from", msg['source']
+                        response['destination'] = [msg['source']]
+                        response['source'] = self.name
+                    self.req.send_json(response)
+#                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
+#                                    'value' : entry.value})
                 else: 
                     """Send error"""
                     self.req.send_json({'type': 'getResponse', 'id' : msg['id'],

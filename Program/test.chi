@@ -3,3 +3,4 @@ start Bob --peer-names Alice,Carl
 start Carl --peer-names Alice,Bob
 set Bob Bob 75
 get Bob Bob
+get Alice Bob
