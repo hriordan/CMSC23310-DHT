@@ -66,7 +66,7 @@ class Node(object):
                                 'destination': [peer], 'timestamp': dtatts})
             print "sending to", peer
         """
-        hbfn = ioloop.DelayedCallback(self.sendHB, 100)
+        hbfn = ioloop.DelayedCallback(self.sendHB, 50)
         hbfn.start()
 
     def handle_broker_message(self, msg_frames):
@@ -91,7 +91,7 @@ class Node(object):
             if not self.connected:
                 self.connected = True
                 self.req.send_json({'type': 'helloResponse', 'source': self.name})
-                hbfn = ioloop.DelayedCallback(self.sendHB, 100)
+                hbfn = ioloop.DelayedCallback(self.sendHB, 20)
                 hbfn.start()
                 print "Got hello"
         elif msg['type'] == 'heartbeat':

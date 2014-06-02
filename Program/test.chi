@@ -9,3 +9,11 @@ set Alice blue 17
 get Bob blue
 set blue 42
 get blue
+get Orange
+set Orange 8
+set Red 7
+get Orange
+get Bob Red
+get blue
+set blue 9
+get blue
