@@ -5,3 +5,4 @@ set Bob Bob 75
 get Bob Bob
 get Alice Bob
 set Alice blue 17
+get Bob blue

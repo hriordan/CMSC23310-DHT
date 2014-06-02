@@ -177,19 +177,26 @@ class Node(object):
                 """SET KEY"""
                 KeyObj = keystore.KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
-                self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
+                response = {'id' : msg['id'], 'value' : v}
+                """ If the message has a source, send a setRelay. """
+                if 'source' in msg.keys():
+                    response['type'] = "setRelay"
+                    response['destination'] = [msg['source']]
+                else:
+                    response['type'] = "setResponse"
+                self.req.send_json(response)
         elif msg['type'] == "getRelay":
             del msg['destination']
             msg['type'] = "getResponse"
             msg['source'] = self.name
             print msg
             self.req.send_json(msg) #forward to broker/client
-            self.deleteMessage(msg)
 
-        elif msg['type'] == "setResponse":
+        elif msg['type'] == "setRelay":
             del msg['destination']
+            msg['type'] = "setResponse"
+            msg['source'] = self.name
             self.req.send_json(msg) #forward to broker/client
-            self.deleteMessage(msg)
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
