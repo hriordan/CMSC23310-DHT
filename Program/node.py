@@ -166,11 +166,13 @@ class Node(object):
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             keyholder = self.rt.findSucc(hashKey)
             if  keyholder != self.name: #If the keyholder is not me...
-                fwrdmsg = {'type' : 'setForward', 'source' : self.name,
-                           'key' : msg['key'], 'value' : v,
-                           'destination' : keyholder}
-                self.req.send_json(fwrdmsg)
-                self.QueueMessage(fwrdmsg)
+                msgCpy = copy.deepcopy(msg)
+                msgCpy['source'] = self.name
+                msgCpy['destination'] = [keyholder]
+                print "original", msg
+                print "copy", msgCpy
+                self.req.send_json(msgCpy)
+#                self.QueueMessage(msgCpy)
             else: 
                 """SET KEY"""
                 KeyObj = keystore.KeyVal(k, v, datetime.now())
