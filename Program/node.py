@@ -128,25 +128,37 @@ class Node(object):
                 print "original", msg
                 print "copy", msgCpy
                 self.req.send_json(msgCpy)
-                self.QueueMessage(msgCpy)
+#                self.QueueMessage(msgCpy)
             else:
                 """ If we have the value, we can simply send it back. """
                 entry = self.keystore.GetKey(hashkey)
                 if entry != None:
                     print "Received get id", msg['id']
-                    response = {'type' : 'getResponse', 'id' : msg['id'],
-                                'value' : entry.value}
+                    """
+                    If the message has a source, we send a getRelay instead
+                    of a getResponse.
+                    """
+                    response = {'id' : msg['id'], 'value' : entry.value}
                     if 'source' in msg.keys():
-                        print "relayed from", msg['source']
+                        print "Message must be relayed to", msg['source']
+                        response['type'] = "getRelay"
                         response['destination'] = [msg['source']]
-                        response['source'] = self.name
+                    else:
+                        print "Message goes to broker."
+                        response['type'] = "getResponse"
+                    response['source'] = self.name
                     self.req.send_json(response)
-#                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
-#                                    'value' : entry.value})
                 else: 
                     """Send error"""
-                    self.req.send_json({'type': 'getResponse', 'id' : msg['id'],
-                                    'error' : "No match to key found!"})
+                    response = {'id' : msg['id'],
+                                'error' : "No match to key found!"}
+                    if 'source' in msg.keys():
+                        response['type'] = "getRelay"
+                        response['destination'] = [msg['source']]
+                    else:
+                        response['type'] = "getResponse"
+                    response['source'] = self.name
+                    self.req.send_json(response)
         elif msg['type'] == 'set':
             # TODO: Handle the keystore stuff.
             k = msg['key']
@@ -164,8 +176,11 @@ class Node(object):
                 KeyObj = keystore.KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
                 self.req.send_json({'type': 'setResponse', 'id': msg['id'], 'value': v})
-        elif msg['type'] == "getResponse":
+        elif msg['type'] == "getRelay":
             del msg['destination']
+            msg['type'] = "getResponse"
+            msg['source'] = self.name
+            print msg
             self.req.send_json(msg) #forward to broker/client
             self.deleteMessage(msg)
 
