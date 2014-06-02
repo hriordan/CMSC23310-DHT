@@ -70,9 +70,10 @@ class Node(object):
         hbfn.start()
 
     def handle_broker_message(self, msg_frames):
-        print "Handling broker message!"
+#        print "Handling broker message!"
 #        print "len is", len(msg_frames)
 #        print "name is", msg_frames[0]
+        pass
 
     def handle(self, msg_frames):
         assert len(msg_frames) == 3
