@@ -59,7 +59,8 @@ class Node(object):
         print "sending heartbeats", dtatts
         for peer in self.peers:
             self.req.send_json({'type': 'heartbeat', 'source': self.name,
-                                'destination': peer, 'timestamp': dtatts})
+                                'destination': [peer], 'timestamp': dtatts})
+            print "sending to", peer
         hbfn = ioloop.DelayedCallback(self.sendHB, 25)
         hbfn.start()
 

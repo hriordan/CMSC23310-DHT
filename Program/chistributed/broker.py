@@ -288,6 +288,7 @@ class Broker:
     Forward the message to every node listed in field 'destination', replacing
     the destination with only the recipient's name.
     '''
+    print "received", message['type'], "from", message['source'], "for", message['destination']
     should_receive = set(message['destination'])
     if message.sender:
       node_name = self.nodes_by_sender()[message.sender]
@@ -317,6 +318,7 @@ class Broker:
         else:
           message['value'] = original_value
         message['destination'] = [dest]
+        print "msg", message['type'], message['source'], message['destination']
         message.send(self.pub, dest)
 
     # Note that delayed messages are subject to partitioning once they are
