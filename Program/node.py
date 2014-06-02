@@ -116,6 +116,7 @@ class Node(object):
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
 
             keyholder = self.rt.findSucc(hashkey)
+            print "key", k, "get succ is", keyholder
             if  keyholder != self.name: #If the keyholder is not me...
                 """
                 Ask the successor  for the value.
@@ -165,6 +166,7 @@ class Node(object):
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             keyholder = self.rt.findSucc(hashKey)
+            print "key", k, "set succ is", keyholder
             if  keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
                 msgCpy['source'] = self.name
@@ -196,6 +198,7 @@ class Node(object):
             del msg['destination']
             msg['type'] = "setResponse"
             msg['source'] = self.name
+            print msg
             self.req.send_json(msg) #forward to broker/client
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name

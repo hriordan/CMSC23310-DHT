@@ -10,7 +10,7 @@ class KeyStore(object):
             self.ks[hKey] = keyVal
         else:
             newTS = keyVal.GetTimestamp()
-            if newTS > self.kn[hKey].GetTimestamp():
+            if newTS > self.ks[hKey].GetTimestamp():
                 self.ks[hKey] = keyVal
 
     def GetKey(self, hashKey):
