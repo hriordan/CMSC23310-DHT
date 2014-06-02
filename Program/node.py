@@ -66,7 +66,7 @@ class Node(object):
                                 'destination': [peer], 'timestamp': dtatts})
             print "sending to", peer
         """
-        hbfn = ioloop.DelayedCallback(self.sendHB, 50)
+        hbfn = ioloop.DelayedCallback(self.sendHB, 40)
         hbfn.start()
 
     def handle_broker_message(self, msg_frames):
@@ -75,7 +75,6 @@ class Node(object):
 #        print "name is", msg_frames[0]
 
     def handle(self, msg_frames):
-        print "Handling!"
         assert len(msg_frames) == 3
         assert msg_frames[0] == self.name
         # Second field is the empty delimiter
@@ -124,7 +123,13 @@ class Node(object):
                 message.
                 """
                 msgCpy = copy.deepcopy(msg)
-                msgCpy['source'] = self.name
+                """
+                If we received this from someone, it should go back to
+                them. We don't have to worry about it anymore.
+                If we didn't receive it from someone, it's ours now.
+                """
+                if 'source' not in msg.keys():
+                    msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
                 print "original", msg
                 print "copy", msgCpy
@@ -134,7 +139,7 @@ class Node(object):
                 """ If we have the value, we can simply send it back. """
                 entry = self.keystore.GetKey(hashkey)
                 if entry != None:
-                    print "Received get id", msg['id']
+                    print "Received get id", msg['id'], "they want", msg['key']
                     """
                     If the message has a source, we send a getRelay instead
                     of a getResponse.
@@ -169,7 +174,8 @@ class Node(object):
             print "key", k, "set succ is", keyholder
             if  keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
-                msgCpy['source'] = self.name
+                if 'source' not in msg.keys():
+                    msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
                 print "original", msg
                 print "copy", msgCpy

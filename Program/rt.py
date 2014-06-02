@@ -14,6 +14,7 @@ class RoutingTable(object):
     #Adds RT Entry to table
     def addRTEntry(self, rt_entry):
         if rt_entry.getName() not in self.rt.keys():
+            print "!!!!!!adding", rt_entry.name
             self.rt[rt_entry.getName()] = rt_entry
         else:
             print "ERROR: entry already in routing table, this should never happen"
@@ -109,6 +110,7 @@ class RoutingTable(object):
             if td. days > 0 or td.seconds > 0 or td.microseconds > THRESHOLD:
                 dead_keys.append(k)
         for d in dead_keys:
+            print "!!!!!!removing", d
             del self.rt[d]
 
 class RTEntry(object):

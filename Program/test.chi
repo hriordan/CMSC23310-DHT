@@ -13,7 +13,7 @@ get Orange
 set Orange 8
 set Red 7
 get Orange
-get Bob Red
+get Red
 get blue
 set blue 9
 get blue
