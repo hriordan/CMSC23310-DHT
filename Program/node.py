@@ -79,7 +79,8 @@ class Node(object):
         it's up to date before we try to send any messages.
         """
         self.rt.rtSweep(datetime.now())
-
+        self.neighbors = self.rt.findNeighbors()
+        print self.neighbors
         
         if msg['type'] == 'hello':
             # Should be the very first message we see.
@@ -106,6 +107,9 @@ class Node(object):
                 srcPos = int(hashlib.sha1(src).hexdigest(), 16)
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
                 self.rt.addRTEntry(newEntry)
+                self.neighbors = self.rt.findNeighbors()
+                # TODO: Search our keystore and send any replicas that need
+                # to be sent.
         
         elif msg['type'] == 'get':
             k = msg['key']
@@ -184,7 +188,8 @@ class Node(object):
 
             else: 
                 """SET KEY"""
-                KeyObj = keystore.KeyVal(k, v, datetime.now())
+                dt = datetime.now()
+                KeyObj = keystore.KeyVal(k, v, dt)
                 self.keystore.AddKey(KeyObj)
                 
                 response = {'id' : msg['id'], 'value' : v}
@@ -195,8 +200,19 @@ class Node(object):
                 else:
                     response['type'] = "setResponse"
                 self.req.send_json(response)
-                #do replication 
-                self.updateReplicas( {k:v} )
+                """ Send replication messages. """
+                dtatts = [dt.year, dt.month, dt.day, dt.hour,
+                          dt.minute, dt.second, dt.microsecond]
+                targets = self.neighbors
+                replica = {'id' : msg['id'], 'type' : 'replica',
+                           'source' : self.name, 'key' : k, 'value' : v,
+                           'timestamp' : dtatts}
+                for t in targets:
+                    if t != None:
+                        replica['destination'] = [t]
+                        self.req.send_json(replica)
+                # self.updateReplicas( {k:v} )
+                # TODO: Enqueue the messages and wait for a response
 
         elif msg['type'] == "getRelay":
             del msg['destination']
@@ -217,11 +233,28 @@ class Node(object):
         elif msg['type'] == 'replica':
             """Add keys to your own store if you recieve a replica. 
                 Act on faith that the replica is correctly targeted to you"""
-            newKeys = msg['keyvals']
-            for key in newKeys:
-                KeyObj = keystore.KeyVal(key, newKeys[key], datetime.now())
+            src = msg['source']
+            k = msg['key']
+            v = msg['value']
+            print src, "asked to replicate key", k, "value", v
+            dt = msg['timestamp']
+            timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
+                                 day = int(dt[2]), hour = int(dt[3]),
+                                 minute = int(dt[4]), second = int(dt[5]),
+                                 microsecond = int(dt[6]))
+            entry = self.keystore.GetKey(msg['key'])
+            if entry != None:
+                if timestamp > entry.timestamp:
+                    entry.value = msg['value']
+                    entry.timestamp = timestamp
+                    # TODO: Send a replica response to indicate successful replication.
+                else:
+                    print "SHOULD SEND ERROR"
+                    # TODO: Send a replica error to indicate failed replication.
+            else:
+                KeyObj = keystore.KeyVal(msg['key'], msg['value'], timestamp)
                 self.keystore.AddKey(KeyObj)
-
+                # TODO: Send a replica response to indicate successful replication.
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        

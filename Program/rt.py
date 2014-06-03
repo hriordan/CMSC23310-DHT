@@ -176,7 +176,11 @@ class RTEntry(object):
         return self.timestamp
 
     def updateTimestamp(self, timestamp):
+        """
         td = timestamp - self.timestamp
         if td.days > 0 or td.seconds > 0 or td.microseconds > 0:
+            self.timestamp = timestamp
+        """
+        if timestamp > self.timestamp:
             self.timestamp = timestamp
         return
