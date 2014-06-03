@@ -251,9 +251,11 @@ class Node(object):
         #self.CheckMerge()
         #self.CheckPartition() 
 
-    def updateReplicas(keyvals):
+    def updateReplicas(self, keyvals):
         for neighbor in self.myNeighbors:
-            update = {'type': 'replica', 'source': self.name, 'destination': neighbor, 'keyvals': keyvals} #keyvals is a dictionary
+            update = {'type': 'replica', 'source': self.name,
+                       'destination': [neighbor], 'keyvals': keyvals}
+            #keyvals is a dictionary
             self.req.send_json(update)
 
 
