@@ -14,7 +14,7 @@ class RoutingTable(object):
     #Adds RT Entry to table
     def addRTEntry(self, rt_entry):
         if rt_entry.getName() not in self.rt.keys():
-            print "!!!!!!adding", rt_entry.name
+            print "!adding", rt_entry.name
             self.rt[rt_entry.getName()] = rt_entry
         else:
             print "ERROR: entry already in routing table, this should never happen"
@@ -31,6 +31,34 @@ class RoutingTable(object):
             return self.rt[name]
         else:
             return None
+
+    #determines which nodes are your neighbors for replication 
+    def findNeighbors(self):
+        neighbors = [] 
+        #find first neighbor
+        firstpos = HASHMAX
+        firstname = ""
+        for entry in self.rt:
+            ringpos = self.rt[entry].ringPos
+            if ringpos > self.pos and ringpos < firstpos : 
+                firstpos = ringpos  
+                firstname = self.rt[entry].name
+
+        neighbors.append(firstname)
+        
+        #find the second 
+        secondpos = HASHMAX
+        secondname = "" 
+        for entry in self.rt:
+            ringpos = self.rt[entry].ringPos
+            if ringpos > firstpos and ringpos < secondpos :
+                secondpos = ringpos 
+                secondname = self.rt[entry].name
+
+        neighbors.append(secondname)
+
+        return neighbors
+
 
     """
     Finds the successor to the given key. This is defined as the closest node
@@ -112,6 +140,8 @@ class RoutingTable(object):
         for d in dead_keys:
             print "!!!!!!removing", d
             del self.rt[d]
+
+
 
 class RTEntry(object):
     def __init__(self, name, ringpos, timestamp):

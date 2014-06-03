@@ -11,6 +11,7 @@ import copy
 from datetime import datetime
 import zmq
 import keystore
+import message
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
@@ -41,6 +42,7 @@ class Node(object):
         self.spammer = spammer
         self.ringPos = int(hashlib.sha1(name).hexdigest(), 16)
         self.rt = rt.RoutingTable(name, self.ringPos)
+        self.myNeighbors = [] #list of nodes that I replicate to 
         self.keystore = keystore.KeyStore()
         self.pendingMessages = [] 
 
@@ -57,7 +59,7 @@ class Node(object):
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                   dt.minute, dt.second, dt.microsecond]
-#        print "sending heartbeats", dtatts
+        #print "sending heartbeats", dtatts
         self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
                             'destination' : self.peers, 'timestamp' : dtatts})
         """
@@ -70,9 +72,6 @@ class Node(object):
         hbfn.start()
 
     def handle_broker_message(self, msg_frames):
-#        print "Handling broker message!"
-#        print "len is", len(msg_frames)
-#        print "name is", msg_frames[0]
         pass
 
     def handle(self, msg_frames):
@@ -86,6 +85,7 @@ class Node(object):
         it's up to date before we try to send any messages.
         """
         self.rt.rtSweep(datetime.now())
+
         if msg['type'] == 'hello':
             # Should be the very first message we see.
             if not self.connected:
@@ -94,11 +94,10 @@ class Node(object):
                 hbfn = ioloop.DelayedCallback(self.sendHB, 20)
                 hbfn.start()
                 print "Got hello"
+        
         elif msg['type'] == 'heartbeat':
-            # TODO: We determine the source and update our routing table.
             src = msg['source']
             dt = msg['timestamp']
-#            print "got heartbeat from", src, "at", dt
             timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
                                  day = int(dt[2]), hour = int(dt[3]),
                                  minute = int(dt[4]), second = int(dt[5]),
@@ -111,31 +110,34 @@ class Node(object):
                 srcPos = int(hashlib.sha1(src).hexdigest(), 16)
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
                 self.rt.addRTEntry(newEntry)
+        
         elif msg['type'] == 'get':
             k = msg['key']
             hashkey = int(hashlib.sha1(k).hexdigest(), 16)
-
             keyholder = self.rt.findSucc(hashkey)
             print "key", k, "get succ is", keyholder
+
             if  keyholder != self.name: #If the keyholder is not me...
                 """
                 Ask the successor  for the value.
                 Consult the routing table, and then send the
                 message.
                 """
-                msgCpy = copy.deepcopy(msg)
                 """
                 If we received this from someone, it should go back to
                 them. We don't have to worry about it anymore.
                 If we didn't receive it from someone, it's ours now.
                 """
+                msgCpy = copy.deepcopy(msg)
+                
                 if 'source' not in msg.keys():
                     msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
-                print "original", msg
-                print "copy", msgCpy
+                #print "original", msg
+                #print "copy", msgCpy
                 self.req.send_json(msgCpy)
-#                self.QueueMessage(msgCpy)
+                self.QueueMessage(msgCpy)
+
             else:
                 """ If we have the value, we can simply send it back. """
                 entry = self.keystore.GetKey(hashkey)
@@ -166,26 +168,31 @@ class Node(object):
                         response['type'] = "getResponse"
                     response['source'] = self.name
                     self.req.send_json(response)
+
         elif msg['type'] == 'set':
-            # TODO: Handle the keystore stuff.
             k = msg['key']
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             keyholder = self.rt.findSucc(hashKey)
+
             print "key", k, "set succ is", keyholder
+
+
             if  keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
                 if 'source' not in msg.keys():
                     msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
-                print "original", msg
-                print "copy", msgCpy
+                #print "original", msg
+                #print "copy", msgCpy
                 self.req.send_json(msgCpy)
-#                self.QueueMessage(msgCpy)
+                self.QueueMessage(msgCpy)
+
             else: 
                 """SET KEY"""
                 KeyObj = keystore.KeyVal(k, v, datetime.now())
                 self.keystore.AddKey(KeyObj)
+                
                 response = {'id' : msg['id'], 'value' : v}
                 """ If the message has a source, send a setRelay. """
                 if 'source' in msg.keys():
@@ -194,11 +201,16 @@ class Node(object):
                 else:
                     response['type'] = "setResponse"
                 self.req.send_json(response)
+                #do replication 
+                self.updateReplicas( {k:v} )
+
+
         elif msg['type'] == "getRelay":
             del msg['destination']
             msg['type'] = "getResponse"
             msg['source'] = self.name
             print msg
+            self.deleteMessage(msg) #remove from pendingForwards list 
             self.req.send_json(msg) #forward to broker/client
 
         elif msg['type'] == "setRelay":
@@ -206,7 +218,18 @@ class Node(object):
             msg['type'] = "setResponse"
             msg['source'] = self.name
             print msg
+            self.deleteMessage(msg) #remove from pendingForwards list 
             self.req.send_json(msg) #forward to broker/client
+
+        elif msg['type'] == 'replica':
+            """Add keys to your own store if you recieve a replica. 
+                Act on faith that the replica is correctly targeted to you"""
+            newKeys = msg['keyvals']
+            for key in newKeys:
+                KeyObj = keystore.KeyVal(key, newKeys[key], datetime.now())
+                self.keystore.AddKey(KeyObj)
+
+
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
@@ -214,18 +237,33 @@ class Node(object):
         """check for dead messages to resend"""
         self.SweepPendingMessages()
 
+        """check to see if our neighbors/replicas have changed"""
+        newNeighbors = self.rt.findNeighbors()
+        if self.myNeighbors != newNeighbors:
+            self.myNeighbors = newNeighbors
+            newKeys = {}
+            for key in self.keystore.ks:    #copy all of your keys over
+                newKeys[key.key] = key.value
+            self.updateReplicas(newKeys) 
+
+
         """TBA: merging and partitioning functionality"""
         #self.CheckMerge()
         #self.CheckPartition() 
+
+    def updateReplicas(keyvals):
+        for neighbor in self.myNeighbors:
+            update = {'type': 'replica', 'source': self.name, 'destination': neighbor, 'keyvals': keyvals} #keyvals is a dictionary
+            self.req.send_json(update)
 
 
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
         if msg['type'] == 'set':
-            storedMessage = MessageSetReq(msg['destination'], msg['source'], msg['id'], 
+            storedMessage = message.MessageSetReq(msg['destination'], msg['source'], msg['id'], 
                 msg['key'], msg['value'])
         elif msg['type'] == 'get':
-            storedMessage = MessageGetReq(msg['destination'], msg['source'], msg['id'], 
+            storedMessage = message.MessageGetReq(msg['destination'], msg['source'], msg['id'], 
                 msg['key'], msg['value'])
 
         self.pendingMessages.append(storedMessage)
@@ -249,8 +287,6 @@ class Node(object):
                 message.destination = self.rt.findSucc(hashKey) 
                 newMsg = message.convertToDict()
                 self.req.send_json(newMsg)
-
-
 
 
     def shutdown(self, sig, frame):
