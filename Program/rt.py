@@ -34,6 +34,24 @@ class RoutingTable(object):
 
     #determines which nodes are your neighbors for replication 
     def findNeighbors(self):
+        n1Name = None
+        n1Dist = None
+        n2Name = None
+        n2Dist = None
+        for k in self.rt.keys():
+            entry = self.rt[k]
+            if entry.ringPos > self.pos:
+                cDist = entry.ringPos - self.pos
+            else:
+                cDist = (HASHMAX - self.pos) + entry.ringPos
+            if cDist < n1Dist or n1Dist == None:
+                n1Name = entry.name
+                n1Dist = cDist
+            elif cDist < n2Dist or n2Dist == None:
+                n2Name = entry.name
+                n2Dist = cDist
+        return [n1Name, n2Name]
+        """
         neighbors = [] 
         #find first neighbor
         firstpos = HASHMAX
@@ -58,8 +76,7 @@ class RoutingTable(object):
         neighbors.append(secondname)
 
         return neighbors
-
-
+        """
     """
     Finds the successor to the given key. This is defined as the closest node
     after the key on the ring.

@@ -288,7 +288,7 @@ class Broker:
     Forward the message to every node listed in field 'destination', replacing
     the destination with only the recipient's name.
     '''
-    print message
+#    print message
     should_receive = set(message['destination'])
     if message.sender:
       node_name = self.nodes_by_sender()[message.sender]

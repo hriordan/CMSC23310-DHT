@@ -62,12 +62,6 @@ class Node(object):
         #print "sending heartbeats", dtatts
         self.req.send_json({'type' : 'heartbeat', 'source' : self.name,
                             'destination' : self.peers, 'timestamp' : dtatts})
-        """
-        for peer in self.peers:
-            self.req.send_json({'type': 'heartbeat', 'source': self.name,
-                                'destination': [peer], 'timestamp': dtatts})
-            print "sending to", peer
-        """
         hbfn = ioloop.DelayedCallback(self.sendHB, 40)
         hbfn.start()
 
@@ -86,11 +80,13 @@ class Node(object):
         """
         self.rt.rtSweep(datetime.now())
 
+        
         if msg['type'] == 'hello':
             # Should be the very first message we see.
             if not self.connected:
                 self.connected = True
-                self.req.send_json({'type': 'helloResponse', 'source': self.name})
+                self.req.send_json({'type': 'helloResponse',
+                                    'source': self.name})
                 hbfn = ioloop.DelayedCallback(self.sendHB, 20)
                 hbfn.start()
                 print "Got hello"
@@ -136,7 +132,7 @@ class Node(object):
                 #print "original", msg
                 #print "copy", msgCpy
                 self.req.send_json(msgCpy)
-                self.QueueMessage(msgCpy)
+#                self.QueueMessage(msgCpy)
 
             else:
                 """ If we have the value, we can simply send it back. """
@@ -174,9 +170,7 @@ class Node(object):
             v = msg['value']
             hashKey = int(hashlib.sha1(k).hexdigest(), 16)
             keyholder = self.rt.findSucc(hashKey)
-
             print "key", k, "set succ is", keyholder
-
 
             if  keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
@@ -186,7 +180,7 @@ class Node(object):
                 #print "original", msg
                 #print "copy", msgCpy
                 self.req.send_json(msgCpy)
-                self.QueueMessage(msgCpy)
+#                self.QueueMessage(msgCpy)
 
             else: 
                 """SET KEY"""
@@ -203,7 +197,6 @@ class Node(object):
                 self.req.send_json(response)
                 #do replication 
                 self.updateReplicas( {k:v} )
-
 
         elif msg['type'] == "getRelay":
             del msg['destination']
@@ -229,7 +222,6 @@ class Node(object):
                 KeyObj = keystore.KeyVal(key, newKeys[key], datetime.now())
                 self.keystore.AddKey(KeyObj)
 
-
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
@@ -238,6 +230,7 @@ class Node(object):
         self.SweepPendingMessages()
 
         """check to see if our neighbors/replicas have changed"""
+        """
         newNeighbors = self.rt.findNeighbors()
         if self.myNeighbors != newNeighbors:
             self.myNeighbors = newNeighbors
@@ -245,7 +238,7 @@ class Node(object):
             for key in self.keystore.ks:    #copy all of your keys over
                 newKeys[key.key] = key.value
             self.updateReplicas(newKeys) 
-
+        """
 
         """TBA: merging and partitioning functionality"""
         #self.CheckMerge()
@@ -307,8 +300,6 @@ class Node(object):
 
     def getRT(self):
         return self.rt
-
-
 
 
 if __name__ == '__main__':
