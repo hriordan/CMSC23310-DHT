@@ -53,7 +53,7 @@
 \title{CMSC 23310 Final Project:\\
 Distributed Hash Table}
 
-\author{Josh Feingold \and Henry Nicholas Riordan \and Jake Whitaker}
+\author{Josh Feingold \and Henry Riordan \and Jake Whitaker}
 
 \date{Spring 2014}
 
@@ -65,11 +65,15 @@ Distributed Hash Table}
 
 \section{Project Overview}\label{sec:overview}
 
-For this project we have decided on implementing a distributed hash table for our keystore. We will focus on producing a key-value store that fits in the BASE model.\cite{Fox_1997_BASE} Our design of the distributed hash table comes from Chord\cite {Stoica_2003_Chord}, Pastry \cite{Rowstron_2001_Pastry}, and Dynamo \cite{DeCandia_2007_Dynamo}. Overall our design will follow that of Dynamo the closest as we liked some of the simple design choices. Our DHT like the others is based on a circular keyspace on which we place our nodes. These nodes will be in control of all keys between it and its predecessor. 
+For this project we have decided on implementing a distributed hash table for our keystore. We focused on producing a key-value store that fits in the BASE model.\cite{Fox_1997_BASE} Our design of the distributed hash table came from Chord \cite{Stoica_2003_Chord}, Pastry \cite{Rowstron_2001_Pastry}, and Dynamo \cite{DeCandia_2007_Dynamo}. Overall our design followed that of Dynamo the closest as we liked some of the simple design choices. Our DHT like the others is based on a circular keyspace on which we place our nodes. These nodes will be in control of all keys between it and its predecessor. 
 
-For fault tolerance we will use replicas in order to be able to remain available and consistent after a fail stop. We will use 2 replicas of all keys in addition to the main keystore. In order to detect failures we use a heartbeat that is sent every \textbf{[INSERT HEARTBEAT TIME HERE]} and if we do not receive a heartbeat in \textbf{[INSERT HEARTBEAT/ NODE TIMEOUT HERE]} then we remove the node from our routing table and adjust our replicas as needed. If we get a heartbeat from a node we do not have in our routing table, we add them and merge their keystore with our own, also adjusting what keys we own and replicate.
+The DHT's routing table is a complete routing table. This removed the complexity of the various routing methods discussed in \cite{Stoica_2003_Chord, Rowstron_2001_Pastry}. This follows the design of Dynamo \cite{DeCandia_2007_Dynamo}, it makes for a quicker response to requests due to the reduction to total messages required. Maintaining the routing table is slightly more complex as each node needs to keep track of all the other nodes and detect failures. All routing table entries have a timestamp that we compare to current time with a sweep function. Once the timeout period expires the node is removed from the routing table and is considered failed.  In order for a node to prove to all other nodes it sends a heartbeat message out to the entire network. When a node receives a heartbeat it resets the timeout for the sender in the routing table. If a node receives a heartbeat from a node not in its routing table it is considered a new node and it is added to our routing table. Nodes joining can also trigger replication and merging events depending on their position in the keyspace.
 
-When a node communicates with another node, it stores the message until we receive a response to that message. This ensure that we do not fail to respond to a request because a node failed and we have not detected that failure yet.
+Our main fault tolerance is a set of two replicas. Each node replicates the keyspace of its two predecessors. This design allows for a node to fail and by simply having each node update its routing table the entire DHT is completely functional. A failure will trigger more replication to ensure two duplicates, but it will not reduce availability. There might be some additional latency if you make a request right after a node fails as the routing table update will take some time, however a response will be returned.
+
+The worst case in for our fault tolerance is when a network partition occurs. If a node and its two replicas are in one half of the network, the other half will not know those values anymore.  It will respond to get requests with an error stating that key is not set in the DHT. We will remain available with this method, just not consistent. When the network recovers from a partition a simple merge function is run and we choose the value that was set the latest using a timestamp that is stored with the key value pair.
+
+%%%%% No virtual nodes
 
 \section{Implementation}\label{sec:imple}
 
