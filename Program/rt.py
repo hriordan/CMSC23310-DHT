@@ -152,7 +152,7 @@ class RoutingTable(object):
         for k in self.rt:
             entry = self.rt[k]
             td = timestamp - entry.timestamp
-            if td. days > 0 or td.seconds > 0 or td.microseconds > THRESHOLD:
+            if td.days > 0 or td.seconds > 0 or td.microseconds > THRESHOLD:
                 dead_keys.append(k)
         for d in dead_keys:
             print "!!!!!!removing", d
@@ -166,6 +166,9 @@ class RTEntry(object):
         self.ringPos = ringpos
         self.timestamp = timestamp
         
+    def __repr__(self):
+        return "<RTEntry(%s, %s)>" % (self.name, self.ringPos)
+
     def getName(self):
         return self.name
 

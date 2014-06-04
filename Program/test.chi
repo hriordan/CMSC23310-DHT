@@ -1,19 +1,7 @@
 start Alice --peer-names Bob,Carl
 start Bob --peer-names Alice,Carl
 start Carl --peer-names Alice,Bob
-get foo
 set Bob Bob 75
 get Bob Bob
+split bobpart Bob 
 get Alice Bob
-set Alice blue 17
-get Bob blue
-set blue 42
-get blue
-get Orange
-set Orange 8
-set Red 7
-get Orange
-get Red
-get blue
-set blue 9
-get blue

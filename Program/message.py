@@ -15,15 +15,17 @@ class Message(object):
     def convertToDict(self):
         newdict = {}
         if self.msgType == "get":
+            newdict['type'] = "get"
             newdict["id"] = self.mID
             newdict["source"] = self.source
             newdict["destination"] = self.destination
             newdict["key"] = self.key
         elif self.msgType == "set":
+            newdict['type'] = "get"
             newdict["id"] = self.mID
             newdict["source"] = self.source
             newdict["destination"] = self.destination
-            newdict["key"] = self.keyvals
+            newdict["key"] = self.key
             newdict["value"] = self.value 
         else:
             print "not valid type"
