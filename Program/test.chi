@@ -3,6 +3,5 @@ start Bob --peer-names Alice,Carl,Dave
 start Carl --peer-names Alice,Bob,Dave
 start Dave --peer-names Alice,Bob,Carl
 set Bob Bob 75
-set Bob swag 66
 get Bob Bob
 set Alice a 1	

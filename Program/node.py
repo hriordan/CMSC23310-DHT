@@ -105,9 +105,9 @@ class Node(object):
             else:
                 srcPos = int(hashlib.sha1(src).hexdigest(), 16)
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
-                if findSucc(src) == self.name:
+                if self.rt.findSucc(src) == self.name:
                     self.rt.addRTEntry(newEntry)
-                    self.merge(src)
+#                    self.merge(src)
                 else: 
                     self.rt.addRTEntry(newEntry)
 
@@ -203,7 +203,7 @@ class Node(object):
                 self.req.send_json(response)
 
                 """ Send replication messages. """
-                self.updateReplicas( {k:v} )
+                self.updateReplicas( {k : [KeyObj.value, KeyObj.timestamp.isoformat()]} )
 
         elif msg['type'] == "getRelay":
             del msg['destination']
@@ -228,25 +228,23 @@ class Node(object):
                 Act on faith that the replica is correctly targeted to you"""
             print "I got a REPLICA."
            
-            newKeys = msg['keyvals']    
+            newKeys = msg['keyvals']
+            """
             dt = msg['timestamp']
             timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
                                  day = int(dt[2]), hour = int(dt[3]),
                                  minute = int(dt[4]), second = int(dt[5]),
                                  microsecond = int(dt[6]))
-
-            for key in newKeys:
-                KeyObj = keystore.KeyVal(key, newKeys[key], timestamp)
+            """
+            for k in newKeys:
+                [v, ts] = newKeys[k]
+                KeyObj = keystore.KeyVal(k, v, datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S.%f"))
                 self.keystore.AddKey(KeyObj)
         
         elif msg['type'] == 'merge':
             """INTERNALLY THIS SHOULD BEHAVE THE SAME AS REPLICA."""
+            print "I GOT A MERGE."
             pass 
-
-
-        elif msg['type'] == 'swag':
-            print "The Swag was recieved"
-
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
@@ -264,16 +262,19 @@ class Node(object):
             newKeys = {}
 
             for key in self.keystore.ks:    #copy all of your keys over
-                actualKey = self.keystore.ks[key].key
-                newKeys[actualKey] = self.keystore.ks[key].GetValue()
-            
-            self.updateReplicas(newKeys) 
+                entry = self.keystore.ks[key]
+                newKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
+            print newKeys
+#            self.updateReplicas(newKeys)
+
+
     """BASICALLY PSEUDOCODE AS OF 930 WEDS. DO NOT TRUST"""
+    """
     def merge(self, name):
         mKS = {}
         for entry in self.keystore.ks:
             e = self.keystore.ks[entry].key
-            if findSucc(e) == name:
+            if self.rt.findSucc(e) == name:
                 dt = self.keystore.ks[entry].timestamp
 
                 dtatts = [dt.year, dt.month, dt.day, dt.hour,
@@ -284,20 +285,24 @@ class Node(object):
                 'target': name, 'keyvals': mKS}})
             self.req.send_json({'type': 'merge', 'source': self.name, 
                 'destination,': name, 'newshit': mKS})
-
+    """
     def updateReplicas(self, keyvals):
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                           dt.minute, dt.second, dt.microsecond]
-        print "My neighbors are: ", self.neighbors
+        print "My neighbors are: ", self.myNeighbors
 
         #keyvals is a dictionary
         if len(keyvals) != 0: 
-            for n in self.neighbors:
+            for n in self.myNeighbors:
                 if n != None:
-                    self.req.send_json({'type': 'log', 'debug': {'event': "Sending Replica", 'node': self.name, 'target': n, 'keyvals': keyvals, 'timestamp': dtatts}})
+                    self.req.send_json({'type': 'log',
+                                        'debug': {'event': "Sending Replica",
+                                                  'node': self.name,
+                                                  'target': n,
+                                                  'keyvals': keyvals,}})
                     update = {'type': 'replica', 'source': self.name,
-                       'destination': [n], 'keyvals': keyvals, 'timestamp': dtatts}    
+                              'destination': [n], 'keyvals': keyvals}    
                     print "IM REPLICATING TO ", n
                     self.req.send_json(update)
                 
