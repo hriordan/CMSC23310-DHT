@@ -21,7 +21,7 @@ class KeyStore(object):
 
     def GetKey(self, key):
         hashkey = int(hashlib.sha1(key).hexdigest(), 16)
-        self.GetHashKey(hashkey)
+        return self.GetHashKey(hashkey)
 
     def __repr__(self):
         for e in self.ks:
