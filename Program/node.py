@@ -276,6 +276,7 @@ class Node(object):
             if self.rt.findSucc(entry.key) == name:
                 mergeKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
         if mergeKeys == {}:
+            print "NOTHING TO MERGE"
             return
         """
         self.req.send_json({'type' : 'log',
@@ -310,9 +311,9 @@ class Node(object):
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
         dt = datetime.now()
-        self.pendingMessages[msg['id']] = (msg, dt)
-        timeoutHandler = ioloop.DelayedCallback(self.SweepPendingMessages, 80)
-        timeoutHandler.start()
+        self.pendingMessages[msg['id']] = msg
+        #timeoutHandler = ioloop.DelayedCallback(self.SweepPendingMessages, 80)
+        #timeoutHandler.start()
         print "Succesfully stored message: ", msg
 
     def deleteMessage(self, msg):
@@ -322,21 +323,18 @@ class Node(object):
     """Checks to see if nodes we forwarded messages to have since died. 
        Reforwards messages to new Successors"""
     def SweepPendingMessages(self):
-        now = datetime.now()
+    
         for k in self.pendingMessages.keys():
-            (msg, dt) = self.pendingMessages[k]
-            delta = now - dt
-            day = delta.days
-            sec = delta.seconds
-            usec = delta.microseconds
-            timedOut = day > 0 or sec > 0 or usec > RESEND_THRESHOLD
-            if timedOut:
-                msgCpy = copy.deepcopy(msg)
-                oldDst = msgCpy['destination'][0]
-                newDst = self.rt.findSucc(oldDst)
-                msgCpy['destination'] = [newDst]
-                print "new message", msgCpy
-                self.req.send_json(msgCpy)
+            print self.pendingMessages[k]
+            msg = self.pendingMessages[k]
+            dest = msg['destination']
+            print "KEY:", k
+
+            if self.rt.findRTEntry(dest) == None:
+                msg['destination'] = [self.rt.findSucc(msg['key'])]
+                print "new message from SWEEP PENDING MESSAGES", msg
+                self.req.send_json(msg)
+                self.pendingMessages[k] = msg 
 
     def shutdown(self, sig, frame):
         print "shutting down"

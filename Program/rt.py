@@ -127,7 +127,6 @@ class RoutingTable(object):
             entry = self.rt[k]
             if entry.ringPos == key:
                 """ If the key is equal to the position, we're done. """
-                print "wut!?"
                 return entry.name
             elif entry.ringPos > key:
                 """
