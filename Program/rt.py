@@ -159,20 +159,6 @@ class RoutingTable(object):
                 cName = entry.name
         return cName
 
-
-
-    def findPred(self, key):
-        dist = None
-        for e in self.rt:
-            if e.getRingPos() > key:
-                d = (HASHMAX - e.getRingPos()) + key
-            else:
-                d = key - e.getRingPos()
-            if dist == None or d < dist:
-                dist = d
-                ret = e
-        return ret
-
     def rtSweep(self, timestamp):
         """
         Sweeps through the routing table and removes dead nodes.

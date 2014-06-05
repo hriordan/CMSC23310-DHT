@@ -111,7 +111,7 @@ class Node(object):
                     self.merge(src)
                 else: 
                     self.rt.addRTEntry(newEntry)
-#                self.garbageCollection()
+                self.garbageCollection()
                 self.neighbors = self.rt.findNeighbors()
         
         elif msg['type'] == 'get':
@@ -351,12 +351,9 @@ class Node(object):
         pred1 = self.rt.findPred(self.name, -1)
         pred2 = self.rt.findPred(pred1, -1)
         names = [self.name, pred1, pred2]
-        pass
-"""
-        for e in self.keystore.ks.values:
+        for e in self.keystore.ks.values():
             if self.rt.findSucc(e.getName()) not in names:
                 self.keystore.RemKey(e.getName())
-"""
 
     def getName(self):
         return self.name
