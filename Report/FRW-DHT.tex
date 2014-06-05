@@ -113,13 +113,165 @@ A node cleans up its keystore when a new node enters the keyspace that it is rep
 
 \section{Example Scripts and Discussion}\label{sec:Ex}
 
-\begin{lstlisting}[language={}, caption={Example Script 1}, basicstyle=\ttfamily]
-start test
-send {"destination": ["test"], "foo": "bar", "type": "foo"}
-get test foo
-send {"destination": ["test"], "bar": "baz", "type": "foo"}
-set foo 42
-get foo
+\begin{lstlisting}[language={}, caption={Fail Stop Test Script}, basicstyle=\ttfamily]
+start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
+start Omega --peer-names Alpha,Beta,Gamma,Able,Baker,Charlie,Delta 
+start Able --peer-names Alpha,Beta,Gamma,Omega,Baker,Charlie,Delta 
+start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta 
+start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
+start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie 
+set A 0
+set B 1
+set C 2
+set D 3
+set E 4
+set F 5
+set G 6
+set H 7
+set I 8
+set J 9
+set K 10
+set L 11
+set M 12
+set N 13
+set O 14
+set P 15
+set Q 16
+set R 17
+set S 18
+set T 19
+set U 20
+set V 21
+set W 22
+set X 23
+set Y 24
+set Z 25
+set a 26
+set b 27
+set c 28
+set d 29
+set e 30
+set f 31
+set g 32
+set h 33
+set i 34
+set j 35
+set k 36
+set l 37
+set m 38
+set n 39
+set o 40
+set p 41
+set q 42
+set r 43
+set s 44
+set t 45
+set u 46
+set v 47
+set w 48
+set x 49
+set y 50
+set z 51
+after 300{
+split part1 Able,Baker,Charlie,Delta
+}
+after 1000{
+get Able A
+get Baker B
+get Charlie C
+get Delta D
+get Able E
+get Baker F
+get Charlie G
+get Delta H
+get Able I
+get Baker J
+get Charlie K
+get Delta L
+get Able M
+get Baker N
+get Charlie O
+get Delta P
+get Able Q
+get Baker R
+get Charlie S
+get Delta T
+get Able U
+get Baker V
+get Charlie W
+get Delta X
+get Able Y
+get Baker Z
+get Charlie a
+get Delta b
+get Able c
+get Baker d
+get Charlie e
+get Delta f
+get Able g
+get Baker h
+get Charlie i
+get Delta j
+get Able k
+get Baker l
+get Charlie m
+get Delta n
+get Able o
+get Baker p
+get Charlie q
+get Delta r
+get Able s
+get Baker t
+get Charlie u
+get Delta v
+get Able w
+get Baker x
+get Charlie y
+get Delta z
+}
+\end{lstlisting}
+
+
+\begin{lstlisting}[language={}, caption={Partition Merge Test Script}, basicstyle=\ttfamily]
+start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
+start Omega --peer-names Alpha,Beta,Gamma,Able,Baker,Charlie,Delta 
+start Able --peer-names Alpha,Beta,Gamma,Omega,Baker,Charlie,Delta 
+start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta 
+start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
+start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie  
+split part1 Alpha,Beta,Gamma,Delta
+#split part2 Able,Baker,Charlie,Omega # set the values on one half of the network
+set Alpha a 11
+set Baker b 22
+set Gamma c 13
+set Omega d 14
+set Alpha e 15
+set Beta f 16
+set Gamma g 17
+set Omega h 18
+set Able a 21
+set Beta b 12
+set Charlie c 23
+set Delta d 24
+set Able e 25
+set Baker f 26
+set Charlie g 27
+set Delta h 28
+join part1
+after 200 {
+get a
+get b
+get c
+get d
+get e
+get f
+get g
+get h
+}
 \end{lstlisting}
 
 \section{Conclusion}\label{sec:Conc}
