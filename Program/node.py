@@ -348,12 +348,13 @@ class Node(object):
         sys.exit(0)
 
     def garbageCollection(self):
-        pred1 = self.rt.findPred(self.name, -1)
-        pred2 = self.rt.findPred(pred1, -1)
-        names = [self.name, pred1, pred2]
-        for e in self.keystore.ks.values():
-            if self.rt.findSucc(e.getName()) not in names:
-                self.keystore.RemKey(e.getName())
+        if len(self.rt.rt) > 1:
+            pred1 = self.rt.findPred(self.name, -1)
+            pred2 = self.rt.findPred(pred1, -1)
+            names = [self.name, pred1, pred2]
+            for e in self.keystore.ks.values():
+                if self.rt.findSucc(e.GetKey()) not in names:
+                    self.keystore.RemKey(e.GetKey())
 
     def getName(self):
         return self.name
