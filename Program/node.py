@@ -72,13 +72,13 @@ class Node(object):
         assert len(msg_frames) == 3
         assert msg_frames[0] == self.name
         msg = json.loads(msg_frames[2])
-       # print "msg rcv %s" % msg['type']
+        #print "msg rcv %s" % msg['type']
         """
         Before we do anything, we sweep the routing table to make sure that 
         it's up to date before we try to send any messages.
         """
         self.rt.rtSweep(datetime.now())
-         #Not sure if this should be here
+        #Not sure if this should be here
         
         #print self.neighbors
 
@@ -108,7 +108,7 @@ class Node(object):
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
                 if self.rt.findSucc(src) == self.name:
                     self.rt.addRTEntry(newEntry)
-#                    self.merge(src)
+                    self.merge(src)
                 else: 
                     self.rt.addRTEntry(newEntry)
 
@@ -238,14 +238,17 @@ class Node(object):
         elif msg['type'] == 'merge':
             """INTERNALLY THIS SHOULD BEHAVE THE SAME AS REPLICA."""
             print "I GOT A MERGE."
-            pass 
+            newKeys = msg['keyvals']
+            for k in newKeys:
+                [v, ts] = newKeys[k]
+                KeyObj = keystore.KeyVal(k, v, datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S.%f"))
+                self.keystore.AddKey(KeyObj)
+
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
 
         """check to see if our neighbors/replicas have changed"""
-                
-
         newNeighbors = self.rt.findNeighbors()
         if self.myNeighbors != newNeighbors:
             print "I got new neighbors!"
@@ -260,9 +263,24 @@ class Node(object):
 
 
     """BASICALLY PSEUDOCODE AS OF 930 WEDS. DO NOT TRUST"""
-    """
     def merge(self, name):
-        mKS = {}
+        print "Merging my keyspace with", name
+        mergeKeys = {}
+        for k in self.keystore.ks:
+            entry = self.keystore.ks[k]
+            if self.rt.findSucc(entry.key) == name:
+                mergeKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
+        if mergeKeys == {}:
+            return
+        """
+        self.req.send_json({'type' : 'log',
+                            'debug' : {'event' : "sending merge", 'node' : self.name,
+                                       'target' : name, 'keyvals' : mergeKeys}})
+        """
+        mergeMsg = {'type' : 'merge', 'source' : self.name,
+                    'destination' : [name], 'keyvals' : mergeKeys}
+        self.req.send_json(mergeMsg)
+        """
         for entry in self.keystore.ks:
             e = self.keystore.ks[entry].key
             if self.rt.findSucc(e) == name:
@@ -275,26 +293,25 @@ class Node(object):
             self.req.send_json({'type': 'log', 'debug': {'event': "Sending merge", 'node': self.name, 
                 'target': name, 'keyvals': mKS}})
             self.req.send_json({'type': 'merge', 'source': self.name, 
-                'destination,': name, 'newshit': mKS})
-    """
+                                'destination': [name], 'newshit': mKS})
+        """
     def updateReplicas(self, keyvals):
-        dt = datetime.now()
-        dtatts = [dt.year, dt.month, dt.day, dt.hour,
-                          dt.minute, dt.second, dt.microsecond]
         print "My neighbors are: ", self.myNeighbors
 
         #keyvals is a dictionary
         if len(keyvals) != 0: 
             for n in self.myNeighbors:
                 if n != None:
+                    """
                     self.req.send_json({'type': 'log',
                                         'debug': {'event': "Sending Replica",
                                                   'node': self.name,
                                                   'target': n,
                                                   'keyvals': keyvals,}})
+                    """
                     update = {'type': 'replica', 'source': self.name,
                               'destination': [n], 'keyvals': keyvals}    
-                    print "IM REPLICATING TO ", n
+                    print "I'M REPLICATING TO ", n
                     self.req.send_json(update)
                 
 
@@ -305,7 +322,6 @@ class Node(object):
         timeoutHandler = ioloop.DelayedCallback(self.SweepPendingMessages, 80)
         timeoutHandler.start()
         print "Succesfully stored message: ", msg
-
 
     def deleteMessage(self, msg):
         if msg['id'] in self.pendingMessages:
