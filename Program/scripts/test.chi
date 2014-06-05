@@ -8,3 +8,4 @@ split p1 Bob
 get Dave Bob
 set Alice a 1
 set Dave Dave 12
+join p1
