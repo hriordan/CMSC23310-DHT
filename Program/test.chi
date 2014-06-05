@@ -5,5 +5,6 @@ start Dave --peer-names Alice,Bob,Carl
 set Bob Bob 75
 get Bob Bob
 split p1 Bob
-get Alice Bob
-set Alice a 1	
+get Dave Bob
+set Alice a 1
+set Dave Dave 12

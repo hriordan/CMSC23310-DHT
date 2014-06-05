@@ -117,7 +117,7 @@ class Node(object):
         elif msg['type'] == 'get':
             k = msg['key']
             keyholder = self.rt.findSucc(k)
-            #print "key", k, "get succ is", keyholder
+            print "key", k, "get succ is", keyholder
 
             if  keyholder != self.name: #If the keyholder is not me...
                 """
