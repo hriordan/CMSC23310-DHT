@@ -67,10 +67,11 @@ class Node(object):
         pass 
 
     def handle(self, msg_frames):
+
         assert len(msg_frames) == 3
         assert msg_frames[0] == self.name
         msg = json.loads(msg_frames[2])
-
+       # print "msg rcv %s" % msg['type']
         """
         Before we do anything, we sweep the routing table to make sure that 
         it's up to date before we try to send any messages.
@@ -78,6 +79,8 @@ class Node(object):
         self.rt.rtSweep(datetime.now())
         self.neighbors = self.rt.findNeighbors() #find mah neighbors. 
         
+        #print self.neighbors
+
         if msg['type'] == 'hello':
             # Should be the very first message we see.
             if not self.connected:
@@ -217,6 +220,7 @@ class Node(object):
         elif msg['type'] == 'replica':
             """Add keys to your own store if you recieve a replica. 
                 Act on faith that the replica is correctly targeted to you"""
+            print "I got a REPLICA."
 
             newKeys = msg['keyvals']    
             dt = msg['timestamp']
@@ -255,10 +259,15 @@ class Node(object):
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                           dt.minute, dt.second, dt.microsecond]
-        update = {'type': 'replica', 'source': self.name,
-                   'destination': self.myNeighbors, 'keyvals': keyvals, 'timestamp': dtatts}
         #keyvals is a dictionary
-        self.req.send_json(update)
+        for n in self.neighbors:
+            if n != None:
+                self.req.send_json({'type': 'log', 'debug': {'event': "Sending Replica", 'node': self.name, 'target': n, 'keyvals': keyvals, 'timestamp': dtatts}})
+                update = {'type': 'replica', 'source': self.name,
+                   'destination': n} 
+                """'keyvals': keyvals, 'timestamp': dtatts}"""
+       
+                self.req.send_json(update)
 
 
     """takes a message dictionary, classes it, queues it""" 
@@ -267,8 +276,7 @@ class Node(object):
             storedMessage = message.MessageSetReq(msg['destination'], msg['source'], msg['id'], 
                 msg['key'], msg['value'])
         elif msg['type'] == 'get':
-            storedMessage = message.MessageGetReq(msg['destination'], msg['source'], msg['id'], 
-                msg['key'])
+            storedMessage = message.MessageGetReq(msg['destination'], msg['source'], msg['id'], msg['key'])
 
         self.pendingMessages.append(storedMessage)
         print "Succesfully stored message: ", storedMessage
@@ -291,8 +299,9 @@ class Node(object):
           
             if self.rt.findRTEntry(dest[0]) == None: #because for some reason destination is stored as a list 
                 hashKey = int(hashlib.sha1(message.key).hexdigest(), 16)
-                message.destination = self.rt.findSucc(hashKey) 
+                message.destination = self.rt.findSucc(hashKey)
                 newMsg = message.convertToDict()
+                print message 
                 print "Sending new message to new target: ", newMsg
                 self.req.send_json(newMsg)
 
