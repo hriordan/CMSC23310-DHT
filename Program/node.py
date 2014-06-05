@@ -136,7 +136,8 @@ class Node(object):
              
                 self.req.send_json({'type': 'log', 'debug': {'event': "relaying get", 'node': self.name, 'target': keyholder, 'key': k}})
                 self.req.send_json(msgCpy)
-                self.QueueMessage(msgCpy)
+                if 'source' not in msg.keys():
+                    self.QueueMessage(msgCpy)
                 
             else:
                 """ If we have the value, we can simply send it back. """
@@ -207,22 +208,24 @@ class Node(object):
                 self.updateReplicas( {k : [KeyObj.value, KeyObj.timestamp.isoformat()]} )
 
         elif msg['type'] == "getRelay":
+            print "DELETING MSG:", msg
             del msg['destination']
             msg['type'] = "getResponse"
             msg['source'] = self.name
             
-            print "DELETING msg: ",msg
-            self.deleteMessage(msg) #remove from pendingForwards list 
-            self.req.send_json(msg) #forward to broker/client
+            if msg['id'] in self.pendingMessages:
+                self.deleteMessage(msg) #remove from pendingForwards list 
+                self.req.send_json(msg) #forward to broker/client
 
         elif msg['type'] == "setRelay":
+            print "DELETING MSG:", msg
             del msg['destination']
             msg['type'] = "setResponse"
             msg['source'] = self.name
             
-            print "DELETING msg: ",msg
-            self.deleteMessage(msg) #remove from pendingForwards list 
-            self.req.send_json(msg) #forward to broker/client
+            if msg['id'] in self.pendingMessages:
+                self.deleteMessage(msg) #remove from pendingForwards list 
+                self.req.send_json(msg) #forward to broker/client
 
         elif msg['type'] == 'replica':
             """Add keys to your own store if you recieve a replica. 
@@ -248,6 +251,8 @@ class Node(object):
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
 
+        self.SweepPendingMessages()
+
         """check to see if our neighbors/replicas have changed"""
         newNeighbors = self.rt.findNeighbors()
         if self.myNeighbors != newNeighbors:
@@ -259,7 +264,7 @@ class Node(object):
                 entry = self.keystore.ks[key]
                 newKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
             print newKeys
-#            self.updateReplicas(newKeys)
+            self.updateReplicas(newKeys)
 
 
     """BASICALLY PSEUDOCODE AS OF 930 WEDS. DO NOT TRUST"""
@@ -280,21 +285,8 @@ class Node(object):
         mergeMsg = {'type' : 'merge', 'source' : self.name,
                     'destination' : [name], 'keyvals' : mergeKeys}
         self.req.send_json(mergeMsg)
-        """
-        for entry in self.keystore.ks:
-            e = self.keystore.ks[entry].key
-            if self.rt.findSucc(e) == name:
-                dt = self.keystore.ks[entry].timestamp
 
-                dtatts = [dt.year, dt.month, dt.day, dt.hour,
-                          dt.minute, dt.second, dt.microsecond]
-                mKS[e] = (self.keystore.ks[e], dtatts)
 
-            self.req.send_json({'type': 'log', 'debug': {'event': "Sending merge", 'node': self.name, 
-                'target': name, 'keyvals': mKS}})
-            self.req.send_json({'type': 'merge', 'source': self.name, 
-                                'destination': [name], 'newshit': mKS})
-        """
     def updateReplicas(self, keyvals):
         print "My neighbors are: ", self.myNeighbors
 
