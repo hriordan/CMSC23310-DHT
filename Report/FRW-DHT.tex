@@ -87,13 +87,17 @@ Our worst case scenario is a partitioning of the network. If a node and its repl
 
 The DHT node is written in Python using the ZMQ python bindings. 
 
+\subsection{Set}\label{sec:get}
+
+When a node receives a set message from the broker, two possibilities exist: Either it is the owner of the key, or it is not. If it is the owner of the key, it adds or updates that value in its keyspace, and returns a set response to the broker, and sends replica messages to the next two nodes on the ring.
+
+If it does not own the key, it forwards the get message to the correct node, adding a field that indicates itself as the source of the message. Additionally, to deal with the possibility of network partitions or fail-stops, the message is stored in a dictionary, with the key being the message's ID field. If the destination node is removed from the routing table before the sender receives a response, the message is resent to a new destination. When a response is received, the sender removes the message from the queue and sends a set response message back to the broker.
+
+The destination node uses a similar method. The only difference are that the node sends a 'set relay' message to the source node instead of a response to the broker. Furthermore, in the rare event that the message must be forwarded a second time, the node does not update the source field or add it to the pending messages queue. This prevents duplicate responses.
+
 \subsection{Get}\label{sec:get}
 
-When a node is sent a get message it first checks if it is the node that holds that key. If it holds that key, then it retrieves the value and returns a getResponse message. If it would hold that key, but the value is not set, an error message is returned. When a node receives a get message for a key it does not hold, it looks up the correct node using the complete routing table and then forwards the message to the correct node. The second node returns a value or error message to the first node who then responds to the client requesting the value.
-
-\subsection{Set}\label{sec:set}
-
-The set function is almost identical to that of the get except instead of just retrieving the value it sets the value and sends back a confirmation message to the client. Nodes forward messages in the same manner as in get when they receives messages that should go to different nodes.
+Get requests are processed almost identically to set requests, with the difference being that the node retrieves the value and returns it to the client, rather than updating it. Get messages are forwarded and stored in the same manner as set messages.
 
 \subsection{Heartbeats}\label{sec:HB}
 
