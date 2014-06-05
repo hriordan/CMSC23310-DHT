@@ -7,10 +7,9 @@ start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta
 start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
 start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie  
 split part1 Alpha,Beta,Gamma,Delta
-split part2 Able,Baker,Charlie,Omega
-# set the values on one half of the network
+#split part2 Able,Baker,Charlie,Omega # set the values on one half of the network
 set Alpha a 11
-set Beta b 12
+set Baker b 22
 set Gamma c 13
 set Omega d 14
 set Alpha e 15
@@ -18,6 +17,21 @@ set Beta f 16
 set Gamma g 17
 set Omega h 18
 set Able a 21
-set Baker b 22
+set Beta b 12
 set Charlie c 23
 set Delta d 24
+set Able e 25
+set Baker f 26
+set Charlie g 27
+set Delta h 28
+join part1
+after 200 {
+get a
+get b
+get c
+get d
+get e
+get f
+get g
+get h
+}
