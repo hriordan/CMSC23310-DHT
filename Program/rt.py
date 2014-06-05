@@ -176,9 +176,12 @@ class RoutingTable(object):
             td = timestamp - entry.timestamp
             if td.days > 0 or td.seconds > 0 or td.microseconds > THRESHOLD:
                 dead_keys.append(k)
+        if dead_keys == []:
+            print "no one to remove."
         for d in dead_keys:
             print "!!!!!!removing", d
             del self.rt[d]
+        print self.rt
 
 
 
