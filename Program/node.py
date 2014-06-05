@@ -15,6 +15,8 @@ import message
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
+
+RESEND_THRESHOLD = 80000
 class Node(object):
 
     def __init__(self, name, pep, rep, spammer, peers):
@@ -228,13 +230,6 @@ class Node(object):
             print "I got a REPLICA."
            
             newKeys = msg['keyvals']
-            """
-            dt = msg['timestamp']
-            timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
-                                 day = int(dt[2]), hour = int(dt[3]),
-                                 minute = int(dt[4]), second = int(dt[5]),
-                                 microsecond = int(dt[6]))
-            """
             for k in newKeys:
                 [v, ts] = newKeys[k]
                 KeyObj = keystore.KeyVal(k, v, datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S.%f"))
@@ -247,9 +242,6 @@ class Node(object):
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
-
-        """check for dead messages to resend"""
-        #self.SweepPendingMessages()
 
         """check to see if our neighbors/replicas have changed"""
                 
@@ -308,46 +300,35 @@ class Node(object):
 
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
-        #        hbfn = ioloop.DelayedCallback(self.sendHB, 20)
-        #        hbfn.start()
-        if msg['type'] == 'set':
-            storedMessage = message.MessageSetReq(msg['destination'], msg['source'], msg['id'], 
-                msg['key'], msg['value'])
-        elif msg['type'] == 'get':
-            storedMessage = message.MessageGetReq(msg['destination'], msg['source'], msg['id'], msg['key'])
-        timeoutHandle = ioloop.DelayedCallback(self.resend, 80)
-        self.pendingMessages[msg['id']] = (timeoutHandle, msg)
-        timeoutHandle.start()
-        print "Succesfully stored message: ", storedMessage
+        dt = datetime.now()
+        self.pendingMessages[msg['id']] = (msg, dt)
+        timeoutHandler = ioloop.DelayedCallback(self.SweepPendingMessages, 80)
+        timeoutHandler.start()
+        print "Succesfully stored message: ", msg
 
 
     def deleteMessage(self, msg):
-        for i, mess in enumerate(self.pendingMessages):
-            if mess.mID == msg['id']:
-                del self.pendingMessages[i]
-                return
-        print "could not find message to delete"
-
-    def resend(self):
-        print "SEND TIMED OUT."
-
+        if msg['id'] in self.pendingMessages:
+            del self.pendingMessages[msg['id']]
 
     """Checks to see if nodes we forwarded messages to have since died. 
        Reforwards messages to new Successors"""
-    """
     def SweepPendingMessages(self):
-        for message in self.pendingMessages:
-            
-            dest = message.destination
-          
-            if self.rt.findRTEntry(dest[0]) == None: #because for some reason destination is stored as a list 
-                hashKey = int(hashlib.sha1(message.key).hexdigest(), 16)
-                message.destination = [self.rt.findSucc(hashKey)]
-                newMsg = message.convertToDict()
-                print message 
-                print "Sending new message to new target: ", newMsg
-                self.req.send_json(newMsg)
-    """
+        now = datetime.now()
+        for k in self.pendingMessages.keys():
+            (msg, dt) = self.pendingMessages[k]
+            delta = now - dt
+            day = delta.days
+            sec = delta.seconds
+            usec = delta.microseconds
+            timedOut = day > 0 or sec > 0 or usec > RESEND_THRESHOLD
+            if timedOut:
+                msgCpy = copy.deepcopy(msg)
+                oldDst = msgCpy['destination'][0]
+                newDst = self.rt.findSucc(oldDst)
+                msgCpy['destination'] = [newDst]
+                print "new message", msgCpy
+                self.req.send_json(msgCpy)
 
     def shutdown(self, sig, frame):
         print "shutting down"

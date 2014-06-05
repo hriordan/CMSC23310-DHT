@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import logging
 import hashlib
 
-THRESHOLD = 200000
+THRESHOLD = 80000
 HASHMAX = 2 ** 160
 
 class RoutingTable(object):
