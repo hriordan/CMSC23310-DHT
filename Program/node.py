@@ -288,6 +288,9 @@ class Node(object):
                     'destination' : [name], 'keyvals' : mergeKeys}
         self.req.send_json(mergeMsg)
 
+    def garbageCollect(self):
+        pass
+
 
     def updateReplicas(self, keyvals):
         print "My neighbors are: ", self.myNeighbors
