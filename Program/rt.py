@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 import logging
+import hashlib
 
-THRESHOLD = 200000
+THRESHOLD = 80000
 HASHMAX = 2 ** 160
 
 class RoutingTable(object):
@@ -32,8 +33,19 @@ class RoutingTable(object):
         else:
             return None
 
-    #determines which nodes are your neighbors for replication 
+                #determines which nodes are your neighbors for replication 
     def findNeighbors(self):
+        if len(self.rt) == 0:
+            return [None,None]
+        elif len(self.rt) == 1:
+            n1name = self.findHashSucc(self.pos + 1)
+            return [n1name, None]
+        else:
+            n1name = self.findHashSucc(self.pos + 1)
+            n2name = self.findHashSucc(self.findRTEntry(n1name).getRingPos() + 1) 
+            return [n1name, n2name]
+
+        """
         n1Name = None
         n1Dist = None
         n2Name = None
@@ -51,7 +63,7 @@ class RoutingTable(object):
                 n2Name = entry.name
                 n2Dist = cDist
         return [n1Name, n2Name]
-        """
+        
         neighbors = [] 
         #find first neighbor
         firstpos = HASHMAX
@@ -83,11 +95,17 @@ class RoutingTable(object):
     NOTE: This may loop back around, so we take that into account.
     """
     def findSucc(self, key):
+        Hkey = int(hashlib.sha1(key).hexdigest(), 16)
+        return self.findHashSucc(Hkey) 
+
+    def findHashSucc(self, key):
+
         cDist = None
         cName = None
         """ First, the key is compared with my information. """
         if self.pos == key:
             """ If the key is our position, we're done. """
+            #print "findHashsucc is about to return name", self.name
             return self.name
         elif self.pos > key:
             """ If we're further along, record our distance. """
@@ -104,10 +122,12 @@ class RoutingTable(object):
         Now we can iterate over the hash to see if we can
         find anything better.
         """
+
         for k in self.rt:
             entry = self.rt[k]
             if entry.ringPos == key:
                 """ If the key is equal to the position, we're done. """
+                print "wut!?"
                 return entry.name
             elif entry.ringPos > key:
                 """
@@ -125,7 +145,10 @@ class RoutingTable(object):
             if nDist < cDist:
                 cDist = nDist
                 cName = entry.name
+        #print "findhashsucc is about to return", cName
         return cName
+
+
 
     # Finds inclusive, if using for routing table, make sure to subtrac
     # 1 from the key's value

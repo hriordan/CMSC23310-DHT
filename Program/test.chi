@@ -1,7 +1,10 @@
-start Alice --peer-names Bob,Carl
-start Bob --peer-names Alice,Carl
-start Carl --peer-names Alice,Bob
+start Alice --peer-names Bob,Carl,Dave
+start Bob --peer-names Alice,Carl,Dave
+start Carl --peer-names Alice,Bob,Dave
+start Dave --peer-names Alice,Bob,Carl
 set Bob Bob 75
 get Bob Bob
-split bobpart Bob 
-get Alice Bob
+split p1 Bob
+get Dave Bob
+set Alice a 1
+set Dave Dave 12
