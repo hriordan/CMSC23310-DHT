@@ -77,7 +77,7 @@ class Node(object):
         it's up to date before we try to send any messages.
         """
         self.rt.rtSweep(datetime.now())
-        self.neighbors = self.rt.findNeighbors() #find mah neighbors. 
+        self.neighbors = self.rt.findNeighbors() #Not sure if this should be here
         
         #print self.neighbors
 
@@ -90,7 +90,7 @@ class Node(object):
                 hbfn = ioloop.DelayedCallback(self.sendHB, 20)
                 hbfn.start()
                 print "%s Got hello" % self.name 
-        
+
         elif msg['type'] == 'heartbeat':
             src = msg['source']
             dt = msg['timestamp']
@@ -110,8 +110,7 @@ class Node(object):
         
         elif msg['type'] == 'get':
             k = msg['key']
-            hashkey = int(hashlib.sha1(k).hexdigest(), 16)
-            keyholder = self.rt.findSucc(hashkey)
+            keyholder = self.rt.findSucc(k)
             #print "key", k, "get succ is", keyholder
 
             if  keyholder != self.name: #If the keyholder is not me...
@@ -135,9 +134,9 @@ class Node(object):
                 
             else:
                 """ If we have the value, we can simply send it back. """
-                entry = self.keystore.GetKey(hashkey)
+                entry = self.keystore.GetKey(k)
                 if entry != None:
-                    #print "Received get id", msg['id'], "they want", msg['key']
+                    print "Received get id", msg['id'], "they want", msg['key']
                     """
                     If the message has a source, we send a getRelay instead
                     of a getResponse.
@@ -167,8 +166,10 @@ class Node(object):
         elif msg['type'] == 'set':
             k = msg['key']
             v = msg['value']
-            hashKey = int(hashlib.sha1(k).hexdigest(), 16)
-            keyholder = self.rt.findSucc(hashKey)
+            #hashKey = int(hashlib.sha1(k).hexdigest(), 16)
+            keyholder = self.rt.findSucc(k)
+            if keyholder == None or keyholder == 'Bob':
+                print "fuck you", k, keyholder
             #print "key", k, "set succ is", keyholder
 
             if  keyholder != self.name: #If the keyholder is not me...
@@ -221,7 +222,7 @@ class Node(object):
             """Add keys to your own store if you recieve a replica. 
                 Act on faith that the replica is correctly targeted to you"""
             print "I got a REPLICA."
-
+           
             newKeys = msg['keyvals']    
             dt = msg['timestamp']
             timestamp = datetime(year = int(dt[0]), month = int(dt[1]),
@@ -232,7 +233,10 @@ class Node(object):
             for key in newKeys:
                 KeyObj = keystore.KeyVal(key, newKeys[key], timestamp)
                 self.keystore.AddKey(KeyObj)
-                
+           
+        elif msg['type'] == 'swag':
+            print "The Swag was recieved"
+
         else:
             print "unrecognized message type", msg['type'], "received by node", self.name
             #TODO: to be filled out        
@@ -241,34 +245,37 @@ class Node(object):
         self.SweepPendingMessages()
 
         """check to see if our neighbors/replicas have changed"""
-        """
+        
+
         newNeighbors = self.rt.findNeighbors()
         if self.myNeighbors != newNeighbors:
+            print "I got new neighbors!"
             self.myNeighbors = newNeighbors
             newKeys = {}
-            for key in self.keystore.ks:    #copy all of your keys over
-                newKeys[key.key] = key.value
-            self.updateReplicas(newKeys) 
-        """
 
-        """TBA: merging and partitioning functionality"""
-        #self.CheckMerge()
-        #self.CheckPartition() 
+            for key in self.keystore.ks:    #copy all of your keys over
+                actualKey = self.keystore.ks[key].key
+                newKeys[actualKey] = self.keystore.ks[key].GetValue()
+            
+            self.updateReplicas(newKeys) 
+        
+
 
     def updateReplicas(self, keyvals):
         dt = datetime.now()
         dtatts = [dt.year, dt.month, dt.day, dt.hour,
                           dt.minute, dt.second, dt.microsecond]
-        #keyvals is a dictionary
-        for n in self.neighbors:
-            if n != None:
-                self.req.send_json({'type': 'log', 'debug': {'event': "Sending Replica", 'node': self.name, 'target': n, 'keyvals': keyvals, 'timestamp': dtatts}})
-                update = {'type': 'replica', 'source': self.name,
-                   'destination': n} 
-                """'keyvals': keyvals, 'timestamp': dtatts}"""
-       
-                self.req.send_json(update)
+        print "My neighbors are: ", self.neighbors
 
+        #keyvals is a dictionary
+        if len(keyvals) != 0: 
+            for n in self.neighbors:
+                if n != None:
+                    self.req.send_json({'type': 'log', 'debug': {'event': "Sending Replica", 'node': self.name, 'target': n, 'keyvals': keyvals, 'timestamp': dtatts}})
+                    update = {'type': 'replica', 'source': self.name,
+                       'destination': [n], 'keyvals': keyvals, 'timestamp': dtatts}    
+                    self.req.send_json(update)
+                
 
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
@@ -281,13 +288,13 @@ class Node(object):
         self.pendingMessages.append(storedMessage)
         print "Succesfully stored message: ", storedMessage
 
+
     def deleteMessage(self, msg):
         for i, mess in enumerate(self.pendingMessages):
             if mess.mID == msg['id']:
                 del self.pendingMessages[i]
                 return
         print "could not find message to delete"
-
 
 
     """Checks to see if nodes we forwarded messages to have since died. 
@@ -299,7 +306,7 @@ class Node(object):
           
             if self.rt.findRTEntry(dest[0]) == None: #because for some reason destination is stored as a list 
                 hashKey = int(hashlib.sha1(message.key).hexdigest(), 16)
-                message.destination = self.rt.findSucc(hashKey)
+                message.destination = [self.rt.findSucc(hashKey)]
                 newMsg = message.convertToDict()
                 print message 
                 print "Sending new message to new target: ", newMsg
