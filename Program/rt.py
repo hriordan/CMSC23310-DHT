@@ -3,7 +3,7 @@ import logging
 import hashlib
 
 THRESHOLD = 80000
-HASHMAX = 2 ** 160
+HASHMAX = 2 ** 160 -1
 
 class RoutingTable(object):
 
@@ -45,50 +45,6 @@ class RoutingTable(object):
             n2name = self.findHashSucc(self.findRTEntry(n1name).getRingPos() + 1) 
             return [n1name, n2name]
 
-        """
-        n1Name = None
-        n1Dist = None
-        n2Name = None
-        n2Dist = None
-        for k in self.rt.keys():
-            entry = self.rt[k]
-            if entry.ringPos > self.pos:
-                cDist = entry.ringPos - self.pos
-            else:
-                cDist = (HASHMAX - self.pos) + entry.ringPos
-            if cDist < n1Dist or n1Dist == None:
-                n1Name = entry.name
-                n1Dist = cDist
-            elif cDist < n2Dist or n2Dist == None:
-                n2Name = entry.name
-                n2Dist = cDist
-        return [n1Name, n2Name]
-        
-        neighbors = [] 
-        #find first neighbor
-        firstpos = HASHMAX
-        firstname = ""
-        for entry in self.rt:
-            ringpos = self.rt[entry].ringPos
-            if ringpos > self.pos and ringpos < firstpos : 
-                firstpos = ringpos  
-                firstname = self.rt[entry].name
-
-        neighbors.append(firstname)
-        
-        #find the second 
-        secondpos = HASHMAX
-        secondname = "" 
-        for entry in self.rt:
-            ringpos = self.rt[entry].ringPos
-            if ringpos > firstpos and ringpos < secondpos :
-                secondpos = ringpos 
-                secondname = self.rt[entry].name
-
-        neighbors.append(secondname)
-
-        return neighbors
-        """
     """
     Finds the successor to the given key. This is defined as the closest node
     after the key on the ring.
@@ -144,13 +100,67 @@ class RoutingTable(object):
             if nDist < cDist:
                 cDist = nDist
                 cName = entry.name
-        #print "findhashsucc is about to return", cName
         return cName
 
 
 
     # Finds inclusive, if using for routing table, make sure to subtrac
     # 1 from the key's value
+
+    def findPred(self, key, offset):
+        Hkey = (int(hashlib.sha1(key).hexdigest(), 16) + offset) % (HASHMAX +1)
+        return self.findHashSucc(Hkey) 
+
+    def findHashPred(self, key):
+
+        cDist = None
+        cName = None
+        """ First, the key is compared with my information. """
+        if self.pos == key:
+            """ If the key is our position, we're done. """
+            #print "findHashsucc is about to return name", self.name
+            return self.name
+        elif self.pos < key:
+            """ If we're ahead, record our distance. """
+            cName = self.name
+            cDist = key - self.pos
+        else:
+            """
+            If we're higher on the ring, our distance is the
+            remaining distance on the ring plus the keys.
+            """
+            cName = self.name
+            cDist = HASHMAX - self.pos + key
+        """
+        Now we can iterate over the hash to see if we can
+        find anything better.
+        """
+
+        for k in self.rt:
+            entry = self.rt[k]
+            if entry.ringPos == key:
+                """ If the key is equal to the position, we're done. """
+                return entry.name
+            elif entry.ringPos < key:
+                """
+                If the node is less than of the key, compare the distance
+                directly.
+                """
+                nDist = key - entry.ringPos
+            else:
+                """
+                If the node is greater of the key, the distance is the remaining
+                distance in the ring plus our own position.
+                """
+                nDist = HASHMAX - entry.ringPos + key
+            """ Now compare the distance to the previous one. """
+            if nDist < cDist:
+                cDist = nDist
+                cName = entry.name
+        return cName
+
+
+
     def findPred(self, key):
         dist = None
         for e in self.rt:

@@ -23,6 +23,13 @@ class KeyStore(object):
         hashkey = int(hashlib.sha1(key).hexdigest(), 16)
         return self.GetHashKey(hashkey)
 
+    def RemKey(self, key):
+        hashkey = int(hashlib.sha1(key).hexdigest(), 16)
+        self.RemHashKey(hashkey)
+
+    def RemHashKey(self, Hkey):
+        del self.ks[Hkey]
+
     def __repr__(self):
         for e in self.ks:
             ret += str(e) + " \n"
