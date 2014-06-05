@@ -1,0 +1,56 @@
+# part1.chi chistributed test script
+#
+# This script splits the network before any values are set, then both networks have the same keys set to different values. 
+# Afterward we join the network and the get the values that were set, the values set last should be the ones returned.
+
+start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
+start Omega --peer-names Alpha,Beta,Gamma,Able,Baker,Charlie,Delta 
+start Able --peer-names Alpha,Beta,Gamma,Omega,Baker,Charlie,Delta 
+start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta 
+start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
+start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie 
+
+# split the netowork
+spilt part1 Alpha,Beta,Gamma,Delta
+
+# set the values on one half of the network
+set Alpha a 11
+set Beta b 12
+set Gamma c 13
+set Omega d 14
+set Alpha e 15
+set Beta f 16
+set Gamma g 17
+set Omega h 18
+
+#set the values on the other half of the network, delayed slightly to ensure that they are set after the keys on the other
+# half of the network
+after 30{
+set Able a 21
+set Baker b 22
+set Charlie c 23
+set Delta d 24
+set Able e 25
+set Baker f 26
+set Charlie g 27
+set Delta h 28
+}
+
+
+# join the partitions together
+join part1
+
+
+# return the values, these should be the values set to the Able, Backer, etc half of the network.
+after 30{
+get a
+get b
+get c
+get d
+get e
+get f
+get g
+get h
+}
