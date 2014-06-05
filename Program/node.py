@@ -77,7 +77,7 @@ class Node(object):
         it's up to date before we try to send any messages.
         """
         self.rt.rtSweep(datetime.now())
-        self.neighbors = self.rt.findNeighbors() #Not sure if this should be here
+         #Not sure if this should be here
         
         #print self.neighbors
 
@@ -105,7 +105,12 @@ class Node(object):
             else:
                 srcPos = int(hashlib.sha1(src).hexdigest(), 16)
                 newEntry = rt.RTEntry(src, srcPos, timestamp)
-                self.rt.addRTEntry(newEntry)
+                if findSucc(src) == self.name:
+                    self.rt.addRTEntry(newEntry)
+                    self.merge(src)
+                else: 
+                    self.rt.addRTEntry(newEntry)
+
                 self.neighbors = self.rt.findNeighbors()
         
         elif msg['type'] == 'get':
@@ -233,7 +238,11 @@ class Node(object):
             for key in newKeys:
                 KeyObj = keystore.KeyVal(key, newKeys[key], timestamp)
                 self.keystore.AddKey(KeyObj)
-           
+        
+        elif msg['type'] == 'merge':
+            pass 
+
+
         elif msg['type'] == 'swag':
             print "The Swag was recieved"
 
@@ -245,7 +254,7 @@ class Node(object):
         self.SweepPendingMessages()
 
         """check to see if our neighbors/replicas have changed"""
-        
+                
 
         newNeighbors = self.rt.findNeighbors()
         if self.myNeighbors != newNeighbors:
@@ -258,8 +267,21 @@ class Node(object):
                 newKeys[actualKey] = self.keystore.ks[key].GetValue()
             
             self.updateReplicas(newKeys) 
-        
+    """BASICALLY PSEUDOCODE AS OF 930 WEDS. DO NOT TRUST"""
+    def merge(self, name):
+        mKS = {}
+        for entry in self.keystore.ks:
+            e = self.keystore.ks[entry].key
+            if findSucc(e) == name:
+                dt = self.keystore.ks[entry].timestamp
 
+                dtatts = [dt.year, dt.month, dt.day, dt.hour,
+                          dt.minute, dt.second, dt.microsecond]
+                mKS[e] = (self.keystore.ks[e], dtatts)
+            self.req.send_json({'type': 'log', 'debug': {'event': "Sending merge", 'node': self.name, 
+                'target': name, 'keyvals': mKS}})
+            self.req.send_json({'type': 'merge', 'source': self.name, 
+                'destination,': name, 'newshit': mKS})
 
     def updateReplicas(self, keyvals):
         dt = datetime.now()
@@ -274,6 +296,7 @@ class Node(object):
                     self.req.send_json({'type': 'log', 'debug': {'event': "Sending Replica", 'node': self.name, 'target': n, 'keyvals': keyvals, 'timestamp': dtatts}})
                     update = {'type': 'replica', 'source': self.name,
                        'destination': [n], 'keyvals': keyvals, 'timestamp': dtatts}    
+                    print "IM REPLICATING TO ", n
                     self.req.send_json(update)
                 
 
