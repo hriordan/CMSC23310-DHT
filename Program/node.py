@@ -240,6 +240,7 @@ class Node(object):
                 self.keystore.AddKey(KeyObj)
         
         elif msg['type'] == 'merge':
+            """INTERNALLY THIS SHOULD BEHAVE THE SAME AS REPLICA."""
             pass 
 
 
@@ -278,7 +279,7 @@ class Node(object):
                 dtatts = [dt.year, dt.month, dt.day, dt.hour,
                           dt.minute, dt.second, dt.microsecond]
                 mKS[e] = (self.keystore.ks[e], dtatts)
-                
+
             self.req.send_json({'type': 'log', 'debug': {'event': "Sending merge", 'node': self.name, 
                 'target': name, 'keyvals': mKS}})
             self.req.send_json({'type': 'merge', 'source': self.name, 
