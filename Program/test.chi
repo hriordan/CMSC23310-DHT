@@ -4,4 +4,6 @@ start Carl --peer-names Alice,Bob,Dave
 start Dave --peer-names Alice,Bob,Carl
 set Bob Bob 75
 get Bob Bob
+split p1 Bob
+get Alice Bob
 set Alice a 1	

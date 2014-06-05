@@ -42,7 +42,7 @@ class Node(object):
         self.rt = rt.RoutingTable(name, self.ringPos)
         self.myNeighbors = [] #list of nodes that I replicate to 
         self.keystore = keystore.KeyStore()
-        self.pendingMessages = [] 
+        self.pendingMessages = {}
 
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP,
                     signal.SIGQUIT]:
@@ -67,7 +67,6 @@ class Node(object):
         pass 
 
     def handle(self, msg_frames):
-
         assert len(msg_frames) == 3
         assert msg_frames[0] == self.name
         msg = json.loads(msg_frames[2])
@@ -250,7 +249,7 @@ class Node(object):
             #TODO: to be filled out        
 
         """check for dead messages to resend"""
-        self.SweepPendingMessages()
+        #self.SweepPendingMessages()
 
         """check to see if our neighbors/replicas have changed"""
                 
@@ -309,13 +308,16 @@ class Node(object):
 
     """takes a message dictionary, classes it, queues it""" 
     def QueueMessage(self, msg):
+        #        hbfn = ioloop.DelayedCallback(self.sendHB, 20)
+        #        hbfn.start()
         if msg['type'] == 'set':
             storedMessage = message.MessageSetReq(msg['destination'], msg['source'], msg['id'], 
                 msg['key'], msg['value'])
         elif msg['type'] == 'get':
             storedMessage = message.MessageGetReq(msg['destination'], msg['source'], msg['id'], msg['key'])
-
-        self.pendingMessages.append(storedMessage)
+        timeoutHandle = ioloop.DelayedCallback(self.resend, 80)
+        self.pendingMessages[msg['id']] = (timeoutHandle, msg)
+        timeoutHandle.start()
         print "Succesfully stored message: ", storedMessage
 
 
@@ -326,9 +328,13 @@ class Node(object):
                 return
         print "could not find message to delete"
 
+    def resend(self):
+        print "SEND TIMED OUT."
+
 
     """Checks to see if nodes we forwarded messages to have since died. 
        Reforwards messages to new Successors"""
+    """
     def SweepPendingMessages(self):
         for message in self.pendingMessages:
             
@@ -341,7 +347,7 @@ class Node(object):
                 print message 
                 print "Sending new message to new target: ", newMsg
                 self.req.send_json(newMsg)
-
+    """
 
     def shutdown(self, sig, frame):
         print "shutting down"
