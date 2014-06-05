@@ -5,8 +5,9 @@ start Omega --peer-names Alpha,Beta,Gamma,Able,Baker,Charlie,Delta
 start Able --peer-names Alpha,Beta,Gamma,Omega,Baker,Charlie,Delta 
 start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta 
 start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
-start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie 
+start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie  
 split part1 Alpha,Beta,Gamma,Delta
+split part2 Able,Baker,Charlie,Omega
 # set the values on one half of the network
 set Alpha a 11
 set Beta b 12
@@ -20,16 +21,3 @@ set Able a 21
 set Baker b 22
 set Charlie c 23
 set Delta d 24
-set Able e 25
-set Baker f 26
-set Charlie g 27
-set Delta h 28
-join part1
-get a
-get b
-get c
-get d
-get e
-get f
-get g
-get h

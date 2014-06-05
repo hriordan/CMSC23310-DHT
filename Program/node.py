@@ -255,6 +255,7 @@ class Node(object):
 
         """check to see if our neighbors/replicas have changed"""
         newNeighbors = self.rt.findNeighbors()
+        print "Current neighbors", self.myNeighbors, "New Neighbors", newNeighbors
         if self.myNeighbors != newNeighbors:
             print "I got new neighbors!"
             self.myNeighbors = newNeighbors
