@@ -109,7 +109,6 @@ class Node(object):
         elif msg['type'] == 'get':
             k = msg['key']
             keyholder = self.rt.findSucc(k)
-            print "key", k, "get succ is", keyholder
 
             if  keyholder != self.name:     #If the keyholder is not me...
                 """
@@ -162,9 +161,8 @@ class Node(object):
             v = msg['value']
             
             keyholder = self.rt.findSucc(k)
-            if keyholder == None or keyholder == 'Bob':
-                print "fuck you", k, keyholder
-            
+            if keyholder == None:
+
             if  keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
                 if 'source' not in msg.keys():
@@ -243,7 +241,6 @@ class Node(object):
             for key in self.keystore.ks:    
                 entry = self.keystore.ks[key]
                 newKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
-            print newKeys
             self.updateReplicas(newKeys)
 
 
@@ -289,7 +286,6 @@ class Node(object):
        Reforwards messages to new Successors"""
     def SweepPendingMessages(self):
         for k in self.pendingMessages.keys():
-            print self.pendingMessages[k]
             msg = self.pendingMessages[k]
             dest = msg['destination']
 
