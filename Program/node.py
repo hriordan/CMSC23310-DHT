@@ -1,6 +1,4 @@
-# node.py
 import rt
-
 import hashlib
 import random
 import json
@@ -11,12 +9,12 @@ import copy
 from datetime import datetime
 import zmq
 import keystore
-import message
 from zmq.eventloop import ioloop, zmqstream
 ioloop.install()
 
 
 RESEND_THRESHOLD = 80000
+
 class Node(object):
 
     def __init__(self, name, pep, rep, spammer, peers):
@@ -257,15 +255,12 @@ class Node(object):
                 mergeKeys[entry.key] = [entry.value, entry.timestamp.isoformat()]
         if mergeKeys == {}:
             return
-        """
-        self.req.send_json({'type' : 'log',
-                            'debug' : {'event' : "sending merge", 'node' : self.name,
-                                       'target' : name, 'keyvals' : mergeKeys}})
-        """
+        
         mergeMsg = {'type' : 'merge', 'source' : self.name,
                     'destination' : [name], 'keyvals' : mergeKeys}
         self.req.send_json(mergeMsg)
 
+    
     def garbageCollect(self):
         pass
 
@@ -274,13 +269,6 @@ class Node(object):
         if len(keyvals) != 0: 
             for n in self.myNeighbors:
                 if n != None:
-                    """
-                    self.req.send_json({'type': 'log',
-                                        'debug': {'event': "Sending Replica",
-                                                  'node': self.name,
-                                                  'target': n,
-                                                  'keyvals': keyvals,}})
-                    """
                     update = {'type': 'replica', 'source': self.name,
                               'destination': [n], 'keyvals': keyvals}    
                     self.req.send_json(update)
@@ -312,7 +300,6 @@ class Node(object):
 
 
     def shutdown(self, sig, frame):
-        print "shutting down"
         self.loop.stop()
         self.sub_sock.close()
         self.req_sock.close()

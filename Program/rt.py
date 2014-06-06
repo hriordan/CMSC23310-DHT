@@ -114,8 +114,7 @@ class RoutingTable(object):
         """ First, the key is compared with my information. """
         if self.pos == key:
             """ If the key is our position, we're done. """
-            #print "findHashsucc is about to return name", self.name
-            return self.name
+           return self.name
         elif self.pos < key:
             """ If we're ahead, record our distance. """
             cName = self.name
