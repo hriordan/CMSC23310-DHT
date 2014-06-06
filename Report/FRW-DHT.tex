@@ -127,7 +127,11 @@ Given the flexibility of the project specifications, we must define success for 
 
 \subsection{Issues and Challenges}
 
+The primary issue we faced was the idea of eventual consistency, and what it means for the network to be eventually consistent. Prioritizing availability over consistency created a situation where a get request could return an old value, or even no value at all, and still be technically correct. As such, many of our design choices were designed to minimize the likelihood of returning a stale value or an error.
 
+For example, the heartbeat system required some fine tuning, particularly the frequency with which messages were sent. We found that using too small a value caused heartbeats to overwhelm the network and starve out the rest of the messages, while using too great a value caused delays while waiting for nodes to time out.
+
+We initially had the message queues on a separate timer from the heartbeat system. However, this design turned out to be overly complex, and we settled on the idea of sweeping the message queue only when the routing table changed, so as to minimize the number of moving parts.
 
 \subsection{Possible Extensions to the Design}
 
@@ -135,6 +139,7 @@ A possible extension to this design is to utilize virtual nodes. This allow for 
 
 A second extension would be an improved timestamp/ clock design. In our design we rely on the nodes having synchronized clocks and we are not enforcing this in our system at all. While it is possible to use an external service to maintain this synchronization, incorporating it into our own DHT would allow for a stronger guarantee on eventual consistency.
 
+Another extension would be alternative routing designs. If this was to be expanded to more than a hundred or so nodes, a complete routing table becomes cumbersome and less effective. A method similar to Chord or Pastry's more sparse tables that run in $O(log(n))$ due to their design would save memory at the cost of higher message volume.
 
 \clearpage
 
