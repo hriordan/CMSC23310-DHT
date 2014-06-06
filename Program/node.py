@@ -124,7 +124,6 @@ class Node(object):
                     msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
              
-                self.req.send_json({'type': 'log', 'debug': {'event': "relaying get", 'node': self.name, 'target': keyholder, 'key': k}})
                 self.req.send_json(msgCpy)
                 if 'source' not in msg.keys():
                     self.QueueMessage(msgCpy)
@@ -168,7 +167,6 @@ class Node(object):
                     msgCpy['source'] = self.name
                 msgCpy['destination'] = [keyholder]
                
-                self.req.send_json({'type': 'log', 'debug': {'event': "relaying set", 'node': self.name, 'target': keyholder, 'key': k, 'value': v}})
                 self.req.send_json(msgCpy)
                 if 'source' not in msg.keys():
                     self.QueueMessage(msgCpy)
@@ -334,11 +332,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.peer_names = args.peer_names.split(',')
 
-    o = open(args.node_name +".ot", "w")
-    e = open(args.node_name +".et", "w")
-    sys.stdout = o
-    sys.stderr = e
-    print "out"
     Node(args.node_name, args.pub_ep, args.router_ep, args.spammer,
          args.peer_names).start()
 
