@@ -123,15 +123,18 @@ Our last script, Listing \ref{lst:Mult} was designed to have a multitude of faul
 
 \section{Conclusion}\label{sec:Conc}
 
-Given the flexibility of the project specifications, we must define success for the project ourselves. Our choice of a distributed hash table creates a highly available system that we eventually make consistent. The design is created to be as flexible as possible so it can seamlessly react to and recover from faults with minimal to zero effect on the clients of the service. From our tests we show this very high availability, but we do see some weakness in consistency under extreme levels of vaults.
+Given the flexibility of the project specifications, we must define success for the project ourselves. Our choice of a distributed hash table creates a highly available system that we eventually make consistent. The design is created to be as flexible as possible so it can seamlessly react to and recover from faults with minimal to zero effect on the clients of the service. From our tests we show this very high availability, but we do see some weakness in consistency under extreme levels of faults.
 
 \subsection{Issues and Challenges}
 
+
+
 \subsection{Possible Extensions to the Design}
 
-\section{Conclusion}\label{sec:Conc}
-Many DHTs use virtual nodes to load balance and distribute replicas more evenly. Virtual nodes are not implemented in this design to reduce complexity.
-=======
+A possible extension to this design is to utilize virtual nodes. This allow for greater load balancing as the larger number of nodes spread across the keyspace distributes the keys amount the physical machines more evenly. This allow ensures that when a physical machine fails that its keys are spread among the rest of the physical nodes instead of a physical machine as in our design.
+
+A second extension would be an improved timestamp/ clock design. In our design we rely on the nodes having synchronized clocks and we are not enforcing this in our system at all. While it is possible to use an external service to maintain this synchronization, incorporating it into our own DHT would allow for a stronger guarantee on eventual consistency.
+
 
 \clearpage
 
