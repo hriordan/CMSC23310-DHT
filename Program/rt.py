@@ -3,7 +3,7 @@ import logging
 import hashlib
 
 THRESHOLD = 80000
-HASHMAX = 2 ** 160
+HASHMAX = 2 ** 160 -1
 
 class RoutingTable(object):
 
@@ -44,13 +44,16 @@ class RoutingTable(object):
             n2name = self.findHashSucc(self.findRTEntry(n1name).getRingPos() + 1) 
             return [n1name, n2name]
 
-
+    """
+    Finds the successor to the given key. This is defined as the closest node
+    after the key on the ring.
+    NOTE: This may loop back around, so we take that into account.
+    """
     def findSucc(self, key):
         Hkey = int(hashlib.sha1(key).hexdigest(), 16)
         return self.findHashSucc(Hkey) 
 
     def findHashSucc(self, key):
-
         cDist = None
         cName = None
         """ First, the key is compared with my information. """
@@ -94,23 +97,63 @@ class RoutingTable(object):
             if nDist < cDist:
                 cDist = nDist
                 cName = entry.name
-        
         return cName
 
 
     # Finds inclusive, if using for routing table, make sure to subtract
     # 1 from the key's value
-    def findPred(self, key):
-        dist = None
-        for e in self.rt:
-            if e.getRingPos() > key:
-                d = (HASHMAX - e.getRingPos()) + key
+
+    def findPred(self, key, offset):
+        Hkey = (int(hashlib.sha1(key).hexdigest(), 16) + offset) % (HASHMAX +1)
+        return self.findHashSucc(Hkey) 
+
+    def findHashPred(self, key):
+
+        cDist = None
+        cName = None
+        """ First, the key is compared with my information. """
+        if self.pos == key:
+            """ If the key is our position, we're done. """
+            #print "findHashsucc is about to return name", self.name
+            return self.name
+        elif self.pos < key:
+            """ If we're ahead, record our distance. """
+            cName = self.name
+            cDist = key - self.pos
+        else:
+            """
+            If we're higher on the ring, our distance is the
+            remaining distance on the ring plus the keys.
+            """
+            cName = self.name
+            cDist = HASHMAX - self.pos + key
+        """
+        Now we can iterate over the hash to see if we can
+        find anything better.
+        """
+
+        for k in self.rt:
+            entry = self.rt[k]
+            if entry.ringPos == key:
+                """ If the key is equal to the position, we're done. """
+                return entry.name
+            elif entry.ringPos < key:
+                """
+                If the node is less than of the key, compare the distance
+                directly.
+                """
+                nDist = key - entry.ringPos
             else:
-                d = key - e.getRingPos()
-            if dist == None or d < dist:
-                dist = d
-                ret = e
-        return ret
+                """
+                If the node is greater of the key, the distance is the remaining
+                distance in the ring plus our own position.
+                """
+                nDist = HASHMAX - entry.ringPos + key
+            """ Now compare the distance to the previous one. """
+            if nDist < cDist:
+                cDist = nDist
+                cName = entry.name
+        return cName
 
 
     def rtSweep(self, timestamp):

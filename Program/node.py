@@ -105,7 +105,7 @@ class Node(object):
                     self.merge(src)
                 else: 
                     self.rt.addRTEntry(newEntry)
-
+                self.garbageCollection()
                 self.neighbors = self.rt.findNeighbors()
         
         elif msg['type'] == 'get':
@@ -265,6 +265,9 @@ class Node(object):
                     'destination' : [name], 'keyvals' : mergeKeys}
         self.req.send_json(mergeMsg)
 
+    def garbageCollect(self):
+        pass
+
 
     def updateReplicas(self, keyvals):
         if len(keyvals) != 0: 
@@ -313,6 +316,15 @@ class Node(object):
         self.sub_sock.close()
         self.req_sock.close()
         sys.exit(0)
+
+    def garbageCollection(self):
+        if len(self.rt.rt) > 1:
+            pred1 = self.rt.findPred(self.name, -1)
+            pred2 = self.rt.findPred(pred1, -1)
+            names = [self.name, pred1, pred2]
+            for e in self.keystore.ks.values():
+                if self.rt.findSucc(e.GetKey()) not in names:
+                    self.keystore.RemKey(e.GetKey())
 
     def getName(self):
         return self.name
