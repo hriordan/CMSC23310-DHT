@@ -1,6 +1,7 @@
 Advanced Distributed Shots - a DHT for good times
 
 Authors:
+
 Henry Riordan - hriordan@uchicago.edu:
 	Codez, Algorithms, Paper Editing
 	
