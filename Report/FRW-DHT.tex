@@ -97,15 +97,15 @@ The destination node uses a similar method. The only difference are that the nod
 
 \subsection{Get}\label{sec:get}
 
-Get requests are processed almost identically to set requests, with the difference being that the node retrieves the value and returns it to the client, rather than updating it. Get messages are forwarded and stored in the same manner as set messages.
+Get requests are processed almost identically to set requests, with the difference being that the node retrieves the value and returns it to the client, rather than updating it. Get messages are forwarded and stored in the same manner as set messages. The only difference is that, while a set request will always be successful, a get request may return an error in the event that the node cannot communicate with the owner of a key, or any of its replicas.
 
 \subsection{Heartbeats}\label{sec:HB}
 
-Each node's routing table contains timestamps that are used to remove nodes when the entries are too old. In order to refresh these timestamps each node sends a heartbeat message to the entire network of nodes. These get set to the entire network, not just the nodes in the its routing table. This full network broadcast allows this system to use heartbeats to detect when a node rejoins the network. When a node receives a heartbeat message from a node it does not have in its routing table, it adds the node and then checks if it needs to adjust its replication and if it needs to merge part of its keystore with the new nodes keystore.
+Each node's routing table contains timestamps indicating the time of the last heartbeat from each node. Any nodes whose heartbeats were older than a chosen age are removed from the routing table. To refresh these timestamps, each node sends a heartbeat to the entire network on regular intervals. These heartbeat messages get sent to every node in the network, rather than every node in the routing table. This full network broadcast allows for the "rediscovery" of nodes in the aftermath of a network partition or a failure. When a node A receives a heartbeat from a node B that is not in its routing table, B is added. If B is A's immediate predecessor, then A may send a merge message to B. If B is A's immediate, or secondary successor, then A must send replica messages to B.
 
 \subsection{Replication}\label{sec:Rep}
 
-Our nodes replicate the data of their two predecessors. The replication of data achieved by having the owner of the key send the key, value, and timestamp to the its two successors in a replica message. This message can contain a single key or multiple keys as replica messages are sent in two distinct cases. First, whenever a node sets a value due to a set message being received it sends out a replica message with that key's data to the nodes replicating it. The second case is when a nodes keystore is changed due to a merge of if its replicas have changed due to nodes entering or leaving the network. In this case we send the entire keystore in a message to our replicas to ensure that they are completely up to date with our information.
+Each node replicates the data of its two predecessors. This is achieved by having the owner of the key send the key, value, and timestamp of each item in its keyspace in a replica message. This message can contain a single key, or multiple keys depending on the circumstance in which the message was sent. Firstly, whenever a node sets a value in response to a set message, it sends out a replica message. Secondly, when a node's keystore is changed in response to a merge, it must send a replica of its entire keystore to ensure consistency between replicas.
 
 \subsection{Merging}\label{sec:Merg}
 
