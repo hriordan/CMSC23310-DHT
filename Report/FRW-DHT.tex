@@ -109,7 +109,7 @@ Each node replicates the data of its two predecessors. This is achieved by havin
 
 \subsection{Merging}\label{sec:Merg}
 
-When a node joins an existing network either from a partition than recovers or just recovering from a fail stop, a merge is required to integrate it into the network. When a node receives a heart beat message from a node not in its routing table, it checks if the new nodes successor is itself. If this is true then the old node must merge some of its keystore with the new node. The node giving up part of its keyspace sends a message containing all the key value pairs that exist in that space to the new node. The new node compares those values with the ones already in its space, if there is a conflict, the value with the most recent time stamp is the value that is kept. After the merge is completed, the new node sends replication messages.
+When a node joins an existing network, either from a recovering partition, or just recovering from a fail-stop, a merge is required to integrate it into the network. When a node receives a heartbeat from a node not in its routing table, it checks if the new node is its immediate predecessor. If so, then the node checks if any of the items in its keystore should now belong to the new node, and sends any such items to the new node in a merge message. The new node resolves any conflicts by choosing the most recently set value, and then sends replication messages for the final values.
 
 \subsection{Deletion}\label{sec:Del}
 
