@@ -64,63 +64,63 @@ set x 49
 set y 50
 set z 51
 split part1 Able,Baker,Charlie,Delta
-get A 0
-get B 1
-get C 2
-get D 3
-get E 4
-get F 5
-get G 6
-get H 7
-get I 8
-get J 9
+get A
+get B
+get C
+get D
+get E
+get F 
+get G 
+get H 
+get I 
+get J 
 delay 26 by 11
-get K 10
-get L 11
-get M 12
-get N 13
-get O 14
+get K 
+get L 
+get M 
+get N 
+get O 
 drop 300 Able
-get P 15
-get Q 16
-get R 17
-get S 18
-get T 19
-get U 20
-get V 21
-get W 22
-get X 23
-get Y 24
-get Z 25
-get a 26
+get P 
+get Q 
+get R 
+get S 
+get T 
+get U 
+get V 
+get W 
+get X 
+get Y 
+get Z 
+get a 
 drop 400 Alpha
-get b 27
-get c 28
-get d 29
-get e 30
-get f 31
-get g 32
-get h 33
-get i 34
-get j 35
-get k 36
-get l 37
+get b 
+get c 
+get d 
+get e 
+get f 
+get g 
+get h 
+get i 
+get j 
+get k 
+get l 
 delay 10 by 30
-get m 38
-get n 39
-get o 40
+get m 
+get n 
+get o 
 drop 300 Beta
-get p 41
-get q 42
-get r 43
-get s 44
-get t 45
-get u 46
-get v 47
-get w 48
-get x 49
-get y 50
-get z 51
+get p 
+get q 
+get r 
+get s 
+get t 
+get u 
+get v 
+get w 
+get x 
+get y 
+get z 
 set AA 100
 set AB 101
 set AC 102
@@ -149,87 +149,87 @@ set AX 123
 set AY 124
 set AZ 125
 join part1
-get A 0
-get B 1
-get C 2
-get D 3
-get E 4
-get F 5
-get G 6
-get H 7
-get I 8
-get J 9
+get A 
+get B 
+get C 
+get D 
+get E 
+get F 
+get G 
+get H 
+get I 
+get J 
 delay 26 by 11
-get K 10
-get L 11
-get M 12
-get N 13
-get O 14
+get K 
+get L 
+get M 
+get N 
+get O 
 drop 300 Able
-get P 15
-get Q 16
-get R 17
-get S 18
-get T 19
-get U 20
-get V 21
-get W 22
-get X 23
-get Y 24
-get Z 25
-get a 26
+get P 
+get Q 
+get R 
+get S 
+get T 
+get U 
+get V 
+get W 
+get X 
+get Y 
+get Z 
+get a 
 drop 400 Alpha
-get b 27
-get c 28
-get d 29
-get e 30
-get f 31
-get g 32
-get h 33
-get i 34
-get j 35
-get k 36
-get l 37
+get b 
+get c 
+get d 
+get e 
+get f 
+get g 
+get h 
+get i 
+get j 
+get k 
+get l 
 delay 10 by 30
-get m 38
-get n 39
-get o 40
+get m 
+get n 
+get o 
 drop 300 Beta
-get p 41
-get q 42
-get r 43
-get s 44
-get t 45
-get u 46
-get v 47
-get w 48
-get x 49
-get y 50
-get z 51
-get AA 100
-get AB 101
-get AC 102
-get AD 103
-get AE 104
-get AF 105
-get AG 106
-get AH 107
-get AI 108
+get p 
+get q 
+get r 
+get s 
+get t 
+get u 
+get v 
+get w 
+get x 
+get y 
+get z 
+get AA 
+get AB 
+get AC 
+get AD 
+get AE 
+get AF 
+get AG 
+get AH 
+get AI 
 delay 5 by 15
-get AJ 109
-get AK 110
-get AL 111
-get AM 112
-get AN 113
-get AO 114
-get AP 115
-get AQ 116
-get AR 117
-get AS 118
-get AT 119
-get AU 120
-get AV 121
-get AW 122
-get AX 123
-get AY 124
-get AZ 125
+get AJ 
+get AK 
+get AL 
+get AM 
+get AN 
+get AO 
+get AP 
+get AQ 
+get AR 
+get AS 
+get AT 
+get AU 
+get AV 
+get AW 
+get AX 
+get AY 
+get AZ 

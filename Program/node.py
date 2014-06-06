@@ -175,7 +175,7 @@ class Node(object):
                
                 self.req.send_json({'type': 'log', 'debug': {'event': "relaying set", 'node': self.name, 'target': keyholder, 'key': k, 'value': v}})
                 self.req.send_json(msgCpy)
-                if 'source' not in msg.keys()
+                if 'source' not in msg.keys():
                     self.QueueMessage(msgCpy)
 
             else: 
