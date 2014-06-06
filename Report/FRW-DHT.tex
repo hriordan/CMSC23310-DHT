@@ -117,6 +117,19 @@ A node cleans up its keystore when a new node enters the keyspace that it is rep
 
 \section{Example Scripts and Discussion}\label{sec:Ex}
 
+\subsection{Fail Stop}
+
+In this script, Listing \ref{lst:fail}, we set values across 8 nodes in a network, using 52 keys to ensure that they are distributed across all of the nodes. Then we simulate 4 nodes failing by creating a partition that we do not recover from. We only ask one set of 4 nodes for the values that were set. This script tests that our replication works as expected since we are falling back on the replicas when the nodes fail. We continue to be accessible and consistent in this script. In more dramatic cases we could lose consistency if all of the nodes containing the data were to fail at the exact same time. In real world applications, the nodes physical location could be a factor in what nodes replicate what data if failures of physical systems were a concern.
+
+\subsection{Partitioning and Merging}
+
+In our partitioning testing script, Listing \ref{lst:Merge}, we start with a partitioned network. Then we set different values to the same keys to both halves of the network. Then we wait to ensure that the values have propagated and then join the merged networks. Again we wait to ensure that everything has propagated before calling get on each key. This test focused on ensuring that we merged partitions correctly and that our conflict resolution algorithm worked as expected. As expected the values that were set more recently were those that were chosen after merging.
+
+\subsection{Multiple Failures}
+
+Our last script, Listing \ref{lst:Mult} was designed to have a multitude of faults. This script was designed to test if we could remain available in the face delays, dropped message, and partitions. While there are times that we have to return an error as the value of a key can be temporarily lost due to failures or partitions, we are always responding to the client and eventually we will have the value unless we lost all three replicas at the same time. Our system did not fail in the face of this intense set of faults which proves its robust nature.
+
+
 
 \section{Conclusion}\label{sec:Conc}
 
@@ -130,7 +143,7 @@ A node cleans up its keystore when a new node enters the keyspace that it is rep
 
 \section{Test Scripts Source}
 
-\begin{lstlisting}[language={}, caption={Fail Stop Test Script}, basicstyle=\ttfamily]
+\begin{lstlisting}[language={}, caption={Fail Stop Test Script}, basicstyle=\ttfamily, label=lst:fail]
 start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
 start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
 start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
@@ -251,7 +264,7 @@ get Delta z
 \end{lstlisting}
 
 
-\begin{lstlisting}[language={}, caption={Partition Merge Test Script}, basicstyle=\ttfamily]
+\begin{lstlisting}[language={}, caption={Partition Merge Test Script}, basicstyle=\ttfamily, label=lst:Merge]
 start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
 start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
 start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
@@ -291,5 +304,242 @@ get h
 }
 \end{lstlisting}
 
+\begin{lstlisting}[language={}, caption={Multiple Failures Test Script}, basicstyle=\ttfamily, label=lst:Mult]
+start Alpha --peer-names Beta,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Beta --peer-names Alpha,Gamma,Omega,Able,Baker,Charlie,Delta 
+start Gamma --peer-names Alpha,Beta,Omega,Able,Baker,Charlie,Delta 
+start Omega --peer-names Alpha,Beta,Gamma,Able,Baker,Charlie,Delta 
+start Able --peer-names Alpha,Beta,Gamma,Omega,Baker,Charlie,Delta 
+start Baker --peer-names Alpha,Beta,Gamma,Omega,Able,Charlie,Delta 
+start Charlie --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Delta 
+start Delta --peer-names Alpha,Beta,Gamma,Omega,Able,Baker,Charlie
+set A 0
+set B 1
+set C 2
+set D 3
+set E 4
+set F 5
+set G 6
+set H 7
+set I 8
+set J 9
+set K 10
+set L 11
+delay 50 by 10
+set M 12
+set N 13
+set O 14
+set P 15
+set Q 16
+set R 17
+set S 18
+set T 19
+set U 20
+set V 21
+drop 400 Baker
+set W 22
+set X 23
+set Y 24
+set Z 25
+set a 26
+set b 27
+set c 28
+set d 29
+set e 30
+delay 10 by 40
+set f 31
+set g 32
+set h 33
+set i 34
+set j 35
+set k 36
+set l 37
+set m 38
+set n 39
+set o 40
+drop 250 Gamma
+set p 41
+set q 42
+set r 43
+set s 44
+set t 45
+delay 19 by 9
+set u 46
+set v 47
+set w 48
+set x 49
+set y 50
+set z 51
+split part1 Able,Baker,Charlie,Delta
+get A
+get B
+get C
+get D
+get E
+get F 
+get G 
+get H 
+get I 
+get J 
+delay 26 by 11
+get K 
+get L 
+get M 
+get N 
+get O 
+drop 300 Able
+get P 
+get Q 
+get R 
+get S 
+get T 
+get U 
+get V 
+get W 
+get X 
+get Y 
+get Z 
+get a 
+drop 400 Alpha
+get b 
+get c 
+get d 
+get e 
+get f 
+get g 
+get h 
+get i 
+get j 
+get k 
+get l 
+delay 10 by 30
+get m 
+get n 
+get o 
+drop 300 Beta
+get p 
+get q 
+get r 
+get s 
+get t 
+get u 
+get v 
+get w 
+get x 
+get y 
+get z 
+set AA 100
+set AB 101
+set AC 102
+set AD 103
+set AE 104
+set AF 105
+set AG 106
+set AH 107
+set AI 108
+delay 5 by 15
+set AJ 109
+set AK 110
+set AL 111
+set AM 112
+set AN 113
+set AO 114
+set AP 115
+set AQ 116
+set AR 117
+set AS 118
+set AT 119
+set AU 120
+set AV 121
+set AW 122
+set AX 123
+set AY 124
+set AZ 125
+join part1
+get A 
+get B 
+get C 
+get D 
+get E 
+get F 
+get G 
+get H 
+get I 
+get J 
+delay 26 by 11
+get K 
+get L 
+get M 
+get N 
+get O 
+drop 300 Able
+get P 
+get Q 
+get R 
+get S 
+get T 
+get U 
+get V 
+get W 
+get X 
+get Y 
+get Z 
+get a 
+drop 400 Alpha
+get b 
+get c 
+get d 
+get e 
+get f 
+get g 
+get h 
+get i 
+get j 
+get k 
+get l 
+delay 10 by 30
+get m 
+get n 
+get o 
+drop 300 Beta
+get p 
+get q 
+get r 
+get s 
+get t 
+get u 
+get v 
+get w 
+get x 
+get y 
+get z 
+get AA 
+get AB 
+get AC 
+get AD 
+get AE 
+get AF 
+get AG 
+get AH 
+get AI 
+delay 5 by 15
+get AJ 
+get AK 
+get AL 
+get AM 
+get AN 
+get AO 
+get AP 
+get AQ 
+get AR 
+get AS 
+get AT 
+get AU 
+get AV 
+get AW 
+get AX 
+get AY 
+get AZ 
+\end{lstlisting}
 \end{document}
 
