@@ -161,9 +161,8 @@ class Node(object):
             v = msg['value']
             
             keyholder = self.rt.findSucc(k)
-            if keyholder == None:
-
-            if  keyholder != self.name: #If the keyholder is not me...
+      
+            if keyholder != self.name: #If the keyholder is not me...
                 msgCpy = copy.deepcopy(msg)
                 if 'source' not in msg.keys():
                     msgCpy['source'] = self.name
