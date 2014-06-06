@@ -139,7 +139,7 @@ A possible extension to this design is to utilize virtual nodes. This allow for 
 
 A second extension would be an improved timestamp/ clock design. In our design we rely on the nodes having synchronized clocks and we are not enforcing this in our system at all. While it is possible to use an external service to maintain this synchronization, incorporating it into our own DHT would allow for a stronger guarantee on eventual consistency.
 
-Another extension would be alternative routing designs. If this was to be expanded to more than a hundred or so nodes, a complete routing table becomes cumbersome and less effective. A method similar to Chord or Pastry's more sparse tables that run in $O(log(n))$ due to their design would save memory at the cost of higher message volume.
+Another extension would be alternative routing designs. If this was to be expanded to more than a hundred or so nodes, a complete routing table becomes cumbersome and less effective. A method similar to Chord \cite{Stoica_2003_Chord} or Pastry's \cite{Rowstron_2001_Pastry} more sparse tables that run in $O(log(n))$ due to their design would save memory at the cost of higher message volume.
 
 \clearpage
 
